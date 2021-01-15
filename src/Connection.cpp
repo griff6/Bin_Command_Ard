@@ -24,9 +24,6 @@ const char broker[]        = "mqtt.googleapis.com";
 
 GSM gsmAccess;
 GPRS gprs;
-
-
-
 GSMSSLClient  gsmSslClient;
 MqttClient    mqttClient(gsmSslClient);
 
@@ -53,6 +50,9 @@ unsigned long getTime() {
 }
 
 void connectGSM() {
+  if (gsmAccess.status() == GSM_READY || gprs.status() == GPRS_READY) {
+    return;
+  }
   Serial.println("Attempting to connect to the cellular network");
 
   while ((gsmAccess.begin(pinnumber) != GSM_READY) ||
@@ -67,6 +67,11 @@ void connectGSM() {
 }
 
 void connectMQTT() {
+  if (mqttClient.connected()) {
+    // MQTT client is connected already
+    return;
+  }
+
   Serial.print("Attempting to connect to MQTT broker: ");
   Serial.print(broker);
   Serial.println(" ");
@@ -76,10 +81,11 @@ void connectMQTT() {
     String jwt = calculateJWT();
 
     mqttClient.setUsernamePassword("", jwt);
+    Serial.println("Connecting...");
 
     if (!mqttClient.connect(broker, 8883)) {
       // failed, retry
-      Serial.print(".");
+      Serial.println(".");
       delay(5000);
     }
   }
@@ -136,6 +142,20 @@ String calculateJWT() {
   jwtClaim["exp"] = now + (24L * 60L * 60L); // expires in 24 hours
 
   return ECCX08JWS.sign(0, JSON.stringify(jwtHeader), JSON.stringify(jwtClaim));
+}
+
+void MQTT_Poll()
+{
+  if (gsmAccess.status() != GSM_READY || gprs.status() != GPRS_READY) {
+    connectGSM();
+  }
+
+  if (!mqttClient.connected()) {
+    // MQTT client is disconnected, connect
+    connectMQTT();
+  }
+
+  mqttClient.poll();
 }
 
 //String calculateJWT() {

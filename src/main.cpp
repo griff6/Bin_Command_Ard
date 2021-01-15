@@ -5,6 +5,7 @@
 #include "Bin_Pressure_Sensor.h"
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
+#include "Connection.h"
 
 
 
@@ -35,6 +36,8 @@ void setup() {
   accState = 0;
   Wire.begin();
 
+  initiallizeMQTT();
+
   SetupRPMSensor();
   SetupPressure();
 
@@ -49,6 +52,8 @@ void setup() {
 void loop() {
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
+
+  MQTT_Poll();
 
   //Calculate a new RPM value
   if(diffRPMTime >= rpmCalcInterval)
