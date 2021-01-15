@@ -36,7 +36,7 @@ void Save_RPM()
 {
   String RPM = "RPM,";
   RPM += filteredValues.filteredRPM;
-  Serial.println(RPM);
+  //Serial.println(RPM);
 }
 
 //ISR whenever pin 2 goes high, indicating the black threshold was crossed.

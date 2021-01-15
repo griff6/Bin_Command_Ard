@@ -195,15 +195,25 @@ void MQTT_Poll()
 //}
 
 void publishDataMessage() {
-  Serial.println("Publishing message");
+  //Serial.println("Publishing message");
+  String fanStatus = "OFF";
+
+  if(filteredValues.filteredRPM > 100)
+  {
+    fanStatus = "ON";
+  }
 
   // send message, the Print interface can be used to set the message contents
   mqttClient.beginMessage("/devices/" + deviceId + "/events");
   //mqttClient.beginMessage("/devices/" + deviceId + "/state");
 
-
-  const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
+  //https://arduinojson.org/v6/assistant/ gives some details on how to calculate the size
+  //https://arduinojson.org/v5/assistant/
+  //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
+  //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
+  const size_t capacity = JSON_OBJECT_SIZE(20);
   DynamicJsonDocument doc(capacity);
+  //DynamicJsonDocument doc(200);
 
   doc["rpm"] = filteredValues.filteredRPM;
   doc["staticPressure"] = filteredValues.filteredSP;
@@ -224,6 +234,11 @@ void publishDataMessage() {
 
   doc["fan_temperature"] = filteredValues.filteredFanTemp;
   doc["fan_humidity"] = filteredValues.filteredFanHumidity;
+  doc["grain"] = "dummyGrain";
+  doc["fanStatus"] = fanStatus;
+
+  doc["grain_temperature"] = 0;
+  doc["grain_moisture"] = 0;
 
   //serializeJson(doc, Serial);
 
@@ -231,10 +246,11 @@ void publishDataMessage() {
   serializeJson(doc, mqttClient);
   //mqttClient.print(millis());
   mqttClient.endMessage();
-  Serial.println("Published Message");
+  Serial.println("Published Message.");
 }
 
 void onMessageReceived(int messageSize) {
+  String rcvMsg;
   // we received a message, print out the topic and contents
   Serial.print("Received a message with topic '");
   Serial.print(mqttClient.messageTopic());
@@ -244,9 +260,14 @@ void onMessageReceived(int messageSize) {
 
   // use the Stream interface to print the contents
   while (mqttClient.available()) {
-    Serial.print((char)mqttClient.read());
+    //Serial.print((char)mqttClient.read());
+    rcvMsg += (char)mqttClient.read();
   }
+  Serial.print("MQTT Message Received: ");
+  Serial.println(rcvMsg);
   Serial.println();
 
-  Serial.println();
+  if(rcvMsg == "001")
+    publishDataMessage();
+
 }

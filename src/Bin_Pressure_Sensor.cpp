@@ -22,5 +22,5 @@ void GetPressure()
   filterValue(static_pressure, filteredValues.filteredSP, sp_fc);
   pressure += filteredValues.filteredSP;
   pressure += ",in. w.";
-  Serial.println(pressure);
+  //Serial.println(pressure);
 }

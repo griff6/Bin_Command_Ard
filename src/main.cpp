@@ -12,10 +12,12 @@
 FilteredValues filteredValues;
 int accState;
 
+long mqttInterval = 500;    //Poll the mqtt every 500 ms
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM
 long printInterval = 10000;//60000;   //how often the program will print the data out (60000 is 1 minute)
 long dataChannelInterval = 60000;//1800000;//3600000;    //Update Every Hour
 long engineTimeInterval = 60000;   //update every minute
+long prevMqttCalc = 0;
 long prevRPMCalc = 0;
 long prevPrint = 0;
 long prevEngineTime = 0;
@@ -53,7 +55,10 @@ void loop() {
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
-  MQTT_Poll();
+  if(currentMillis - prevMqttCalc >= mqttInterval){
+    MQTT_Poll();
+    prevMqttCalc = currentMillis;
+  }
 
   //Calculate a new RPM value
   if(diffRPMTime >= rpmCalcInterval)
