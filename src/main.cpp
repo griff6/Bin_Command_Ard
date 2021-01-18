@@ -55,10 +55,10 @@ void loop() {
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
-  if(currentMillis - prevMqttCalc >= mqttInterval){
+  //if(currentMillis - prevMqttCalc >= mqttInterval){
     MQTT_Poll();
-    prevMqttCalc = currentMillis;
-  }
+  //  prevMqttCalc = currentMillis;
+  //}
 
   //Calculate a new RPM value
   if(diffRPMTime >= rpmCalcInterval)

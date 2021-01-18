@@ -211,34 +211,31 @@ void publishDataMessage() {
   //https://arduinojson.org/v5/assistant/
   //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
   //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
-  const size_t capacity = JSON_OBJECT_SIZE(20);
-  DynamicJsonDocument doc(capacity);
-  //DynamicJsonDocument doc(200);
 
-  doc["rpm"] = filteredValues.filteredRPM;
+  const size_t capacity = JSON_OBJECT_SIZE(10);
+  //DynamicJsonDocument doc(capacity);
+  //DynamicJsonDocument doc(431);
+
+  StaticJsonDocument<capacity> doc;
+  Serial.print("JSON Document capacity:");
+  Serial.println(capacity);
+
+  //doc["rpm"] = filteredValues.filteredRPM;
   doc["staticPressure"] = filteredValues.filteredSP;
-  doc["engineHours"] = filteredValues.engineTime;
-
-  //JsonObject ambient = doc.createNestedObject("ambient");
-  //ambient["temperature"] = filteredAirTemp;
-  //ambient["humidity"] = filteredAirHumidity;
-  //ambient["airPressure"] = filteredAirPressure;
+  //doc["engineHours"] = filteredValues.engineTime;
 
   doc["ambient_temperature"] = filteredValues.filteredAirTemp;
   doc["ambient_humidity"] = filteredValues.filteredAirHumidity;
   doc["ambient_airPressure"] = filteredValues.filteredAirPressure;
 
-  //JsonObject fan = doc.createNestedObject("fan");
-  //fan["temperature"] = filteredFanTemp;
-  //fan["humidity"] = filteredFanHumidity;
-
   doc["fan_temperature"] = filteredValues.filteredFanTemp;
   doc["fan_humidity"] = filteredValues.filteredFanHumidity;
   doc["grain"] = "dummyGrain";
-  doc["fanStatus"] = fanStatus;
+  doc["fanStatus"] = "OFF";
 
   doc["grain_temperature"] = 0;
   doc["grain_moisture"] = 0;
+  //doc["dummy"] = -1;
 
   //serializeJson(doc, Serial);
 
@@ -246,6 +243,8 @@ void publishDataMessage() {
   serializeJson(doc, mqttClient);
   //mqttClient.print(millis());
   mqttClient.endMessage();
+  serializeJsonPretty(doc, Serial);
+  Serial.println();
   Serial.println("Published Message.");
 }
 
