@@ -5,7 +5,7 @@
 #include "Bin_Pressure_Sensor.h"
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
-#include "Connection.h"
+#include "manageConnections.h"
 
 
 
@@ -38,7 +38,7 @@ void setup() {
   accState = 0;
   Wire.begin();
 
-  initiallizeMQTT();
+  InitiallizeConnections();
 
   SetupRPMSensor();
   SetupPressure();
@@ -56,8 +56,14 @@ void loop() {
   long diffRPMTime = currentMillis - prevRPMCalc;
 
   //if(currentMillis - prevMqttCalc >= mqttInterval){
-    MQTT_Poll();
+    //MQTT_Poll();
+    MaintainConnections();
   //  prevMqttCalc = currentMillis;
+  //}
+
+  //if(firstLoop)
+  //{
+  //  RequestTimeStamp();
   //}
 
   //Calculate a new RPM value
@@ -76,8 +82,11 @@ void loop() {
     GetPressure();
     PrintBME280Data();
     GetFanData();
+    //GetGSMLocation();
     Serial.println();
 
     prevPrint = currentMillis;
+    firstLoop = false;
+
   }
 }

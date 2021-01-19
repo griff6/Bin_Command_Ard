@@ -12,6 +12,13 @@ public:
   float engineTime = 0;
 };
 
+extern float maxTemp;
+extern float minTemp;
+extern float avgTemp;
+extern float maxHumidity;
+extern float minHumidity;
+extern float avgHumidity;
+
 extern FilteredValues filteredValues;
 extern int accState;
 
