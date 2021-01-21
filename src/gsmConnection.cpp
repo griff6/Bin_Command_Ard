@@ -214,7 +214,7 @@ void publishDataMessage() {
   //https://arduinojson.org/v5/assistant/
   //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
   //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
-  const size_t capacity = JSON_OBJECT_SIZE(15);
+  const size_t capacity = JSON_OBJECT_SIZE(19);
   //DynamicJsonDocument doc(capacity);
   //DynamicJsonDocument doc(431);
 
@@ -227,14 +227,18 @@ void publishDataMessage() {
   doc["fh"] = filteredValues.filteredFanHumidity;
   doc["ft"] = filteredValues.filteredFanTemp;
   doc["sp"] = filteredValues.filteredSP;
-  doc["minT"] = 65536;
-  doc["maxT"] = 65536;
-  doc["avT"] = 65536;
-  doc["minM"] = 65536;
-  doc["maxM"] = 65536;
-  doc["avM"] = 65536;
+  doc["minT"] = 0.000001;
+  doc["maxT"] = 0.000001;
+  doc["avT"] = 0.000001;
+  doc["minM"] = 0.000001;
+  doc["maxM"] = 0.000001;
+  doc["avM"] = 0.000001;
   doc["mode"] = 1;
   doc["bn"] = currentBatch;
+  doc["ber"] = 0.000001;
+  doc["bat"] = 0.000001;
+  doc["bdt"] = 0.000001;
+  doc["gn"] = "TestCrop";
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
@@ -369,6 +373,10 @@ void onMessageReceived(int messageSize) {
 
 void setRTCTime(DynamicJsonDocument doc)
 {
+  String t1 = doc["time"];
+  Serial.print("T1: ");
+  Serial.println(t1);
+
   unsigned long time = doc["time"];
   Serial.print("Time: ");
   Serial.println(time);

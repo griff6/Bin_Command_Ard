@@ -22,7 +22,7 @@ void SetRTC_Alarm()
   Serial.print(":");
   Serial.println(minutes);
 
-  rtc.setAlarmTime(hour+1, minutes, 0);
+  rtc.setAlarmTime(hour+1, 0, 0);
 }
 
 void RTC_Alarm()
