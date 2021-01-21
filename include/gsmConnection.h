@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 void initiallizeMQTT();
 bool connectGSM();
@@ -8,6 +9,7 @@ String calculateJWT();
 void MQTT_Poll();
 void publishDataMessage();
 void RequestTimeStamp();
-void print2digits(int number);
 void GetLocation();
 void onMessageReceived(int messageSize);
+void setRTCTime(DynamicJsonDocument doc);
+void print2digits(int number);

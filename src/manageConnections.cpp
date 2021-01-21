@@ -25,3 +25,8 @@ void GetGSMLocation()
 {
   GetLocation();
 }
+
+void HandleHourlyData()
+{
+  publishDataMessage();
+}

@@ -7,7 +7,6 @@
 #include <MKRGSM.h>
 #include <ArduinoJson.h>
 #include "SharedResources.h"
-#include <RTCZero.h>
 
 /////// Enter your sensitive data in arduino_secrets.h
 const char pinnumber[]     = SECRET_PINNUMBER;
@@ -29,7 +28,7 @@ GSMSSLClient  gsmSslClient;
 GSMLocation location;
 MqttClient    mqttClient(gsmSslClient);
 
-RTCZero rtc;
+//RTCZero rtc;
 bool locationSet = false;
 
 /*
@@ -136,6 +135,9 @@ void connectMQTT() {
   // subscribe to topics
   mqttClient.subscribe("/devices/" + deviceId + "/config", 1);
   mqttClient.subscribe("/devices/" + deviceId + "/commands/#");
+
+  RequestTimeStamp();
+
   //mqttClient.subscribe("/devices/" + deviceId + "/commands/#");
   //mqttClient.subscribe("/projects/" + projID + "/subscriptions/my-sub");
 }
@@ -193,66 +195,61 @@ void MQTT_Poll()
   mqttClient.poll();
 }
 
-//String calculateJWT() {
-//  unsigned long now = getTime();
-//
-//  // calculate the JWT, based on:
-//  //   https://cloud.google.com/iot/docs/how-tos/credentials/jwts
-////  JSONVar jwtHeader;
-////  JSONVar jwtClaim;
-////
-////  jwtHeader["alg"] = "ES256";
-////  jwtHeader["typ"] = "JWT";
-////
-////  jwtClaim["aud"] = projectId;
-////  jwtClaim["iat"] = now;
-////  jwtClaim["exp"] = now + (24L * 60L * 60L); // expires in 24 hours
-//
-//  const size_t header_capacity = JSON_OBJECT_SIZE(2);
-//  DynamicJsonDocument header_doc(header_capacity);
-//  const size_t claim_capacity = JSON_OBJECT_SIZE(3);
-//  DynamicJsonDocument claim_doc(header_capacity);
-//
-//  header_doc["alg"] = "ES256";
-//  header_doc["typ"] = "JWT";
-//
-//  claim_doc["aud"] = projectId;
-//  claim_doc["iat"] = now;
-//  claim_doc["exp"] = now + (24L * 60L * 60L); // expires in 24 hours
-//
-//  char header[100];
-//  serializeJson(header_doc, header);
-//
-//  char claim[100];
-//  serializeJson(claim_doc, claim);
-//
-//  return ECCX08JWS.sign(0, header, claim);
-//}
-
 void publishDataMessage() {
-  //Serial.println("Publishing message");
-  String fanStatus = "OFF";
+
+  int fanStatus = 0;
 
   if(filteredValues.filteredRPM > 100)
   {
-    fanStatus = "ON";
+    fanStatus = 1;
   }
 
   // send message, the Print interface can be used to set the message contents
+  //mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
+  Serial.println();
+  Serial.println("Publishing message");
   mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
-  //mqttClient.beginMessage("/devices/" + deviceId + "/state");
 
   //https://arduinojson.org/v6/assistant/ gives some details on how to calculate the size
   //https://arduinojson.org/v5/assistant/
   //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
   //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
-  const size_t capacity = JSON_OBJECT_SIZE(10);
+  const size_t capacity = JSON_OBJECT_SIZE(15);
   //DynamicJsonDocument doc(capacity);
   //DynamicJsonDocument doc(431);
 
   StaticJsonDocument<capacity> doc;
-  Serial.print("JSON Document capacity:");
-  Serial.println(capacity);
+
+  doc["ap"] = filteredValues.filteredAirPressure;
+  doc["ah"] = filteredValues.filteredAirHumidity;
+  doc["at"] = filteredValues.filteredAirTemp;
+  doc["fs"] = fanStatus;
+  doc["fh"] = filteredValues.filteredFanHumidity;
+  doc["ft"] = filteredValues.filteredFanTemp;
+  doc["sp"] = filteredValues.filteredSP;
+  doc["minT"] = 65536;
+  doc["maxT"] = 65536;
+  doc["avT"] = 65536;
+  doc["minM"] = 65536;
+  doc["maxM"] = 65536;
+  doc["avM"] = 65536;
+  doc["mode"] = 1;
+  doc["bn"] = currentBatch;
+
+  serializeJson(doc, mqttClient);
+  mqttClient.endMessage();
+  serializeJsonPretty(doc, Serial);
+  Serial.println();
+  //Serial.println("Published Message.");
+}
+
+void publishMaxMins() {
+  // send message, the Print interface can be used to set the message contents
+  mqttClient.beginMessage("/devices/" + deviceId + "/events/MAX_MIN");
+  //mqttClient.beginMessage("/devices/" + deviceId + "/state");
+
+  const size_t capacity = JSON_OBJECT_SIZE(10);
+  StaticJsonDocument<capacity> doc;
 
   //doc["rpm"] = filteredValues.filteredRPM;
   doc["staticPressure"] = filteredValues.filteredSP;
@@ -283,44 +280,14 @@ void publishDataMessage() {
 }
 
 void RequestTimeStamp() {
-  // Set the time
-  rtc.begin(); // initialize RTC
-  // rtc.setTime(hours, minutes, seconds);
-  // rtc.setDate(day, month, year);
-  rtc.setEpoch(gsmAccess.getTime());
-
-  Serial.print("Unix time = ");
-  Serial.println(rtc.getEpoch());
-
-  // Print date...
-  print2digits(rtc.getDay());
-  Serial.print("/");
-  print2digits(rtc.getMonth());
-  Serial.print("/");
-  print2digits(rtc.getYear());
-  Serial.print(" ");
-
-  // ...and time
-  print2digits(rtc.getHours());
-  Serial.print(":");
-  print2digits(rtc.getMinutes());
-  Serial.print(":");
-  print2digits(rtc.getSeconds());
-
-  Serial.println();
-
-
-/*
-  // send message, the Print interface can be used to set the message contents
   mqttClient.beginMessage("/devices/" + deviceId + "/events/TIMESTAMP");
 
-  mqttClient.print("Requesting Timestamp");
+  //mqttClient.print("Requesting Timestamp");
+  mqttClient.print("");
 
   mqttClient.endMessage();
   Serial.println();
   Serial.println("Requested TimeStamp.");
-  */
-
 }
 
 void GetLocation()
@@ -363,108 +330,10 @@ void GetLocation()
   }
 }
 
-void print2digits(int number) {
-  if (number < 10) {
-    Serial.print("0"); // print a 0 before if the number is < than 10
-  }
-  Serial.print(number);
-}
-
-/*
-
-  Serial.println("Trying to get timestamp");
-
-  Udp.begin(localPort);
-
-  sendNTPpacket(); // send an NTP packet to a time server
-
-  // wait to see if a reply is available
-  delay(1000);
-
-  if ( Udp.parsePacket() ) {
-    Serial.println("packet received");
-
-    // We've received a packet, read the data from it
-    Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
-
-    //the timestamp starts at byte 40 of the received packet and is four bytes,
-    // or two words, long. First, esxtract the two words:
-    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
-    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
-
-    // combine the four bytes (two words) into a long integer
-    // this is NTP time (seconds since Jan 1 1900):
-    unsigned long secsSince1900 = highWord << 16 | lowWord;
-
-    Serial.print("Seconds since Jan 1 1900 = " );
-    Serial.println(secsSince1900);
-
-    // now convert NTP time into everyday time:
-    Serial.print("Unix time = ");
-
-    // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
-    const unsigned long seventyYears = 2208988800UL;
-
-    // subtract seventy years:
-    unsigned long epoch = secsSince1900 - seventyYears;
-
-    // print Unix time:
-    Serial.println(epoch);
-
-    // print the hour, minute and second:
-    Serial.print("The UTC time is ");       // UTC is the time at Greenwich Meridian (GMT)
-    Serial.print((epoch  % 86400L) / 3600); // print the hour (86400 equals secs per day)
-    Serial.print(':');
-
-    if ( ((epoch % 3600) / 60) < 10 ) {
-      // In the first 10 minutes of each hour, we'll want a leading '0'
-      Serial.print('0');
-    }
-
-    Serial.print((epoch  % 3600) / 60); // print the minute (3600 equals secs per minute)
-    Serial.print(':');
-
-    if ( (epoch % 60) < 10 ) {
-      // In the first 10 seconds of each minute, we'll want a leading '0'
-      Serial.print('0');
-    }
-
-    Serial.println(epoch % 60); // print the second
-  }
-}
-
-// send an NTP request to the time server at the given address
-void sendNTPpacket()
-{
-  // set all bytes in the buffer to 0
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);
-
-  // Initialize values needed to form NTP request
-  // (see URL above for details on the packets)
-  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
-  packetBuffer[1] = 0;     // Stratum, or type of clock
-  packetBuffer[2] = 6;     // Polling Interval
-  packetBuffer[3] = 0xEC;  // Peer Clock Precision
-
-  // 8 bytes of zero for Root Delay & Root Dispersion
-  packetBuffer[12]  = 49;
-  packetBuffer[13]  = 0x4E;
-  packetBuffer[14]  = 49;
-  packetBuffer[15]  = 52;
-
-  // all NTP fields have been given values, now
-  // you can send a packet requesting a timestamp:
-  Udp.beginPacket(timeServer, 123); //NTP requests are to port 123
-
-  Udp.write(packetBuffer, NTP_PACKET_SIZE);
-
-  Udp.endPacket();
-}
-*/
-
 void onMessageReceived(int messageSize) {
   String rcvMsg;
   // we received a message, print out the topic and contents
+  Serial.println();
   Serial.print("Received a message with topic '");
   Serial.print(mqttClient.messageTopic());
   Serial.print("', length ");
@@ -480,10 +349,50 @@ void onMessageReceived(int messageSize) {
   Serial.println(rcvMsg);
   Serial.println();
 
-  if(rcvMsg == "001")
+  //char json[] = rcvMsg;
+  DynamicJsonDocument doc(1024);
+  deserializeJson(doc, rcvMsg);
+  const char* command = doc["msg"];
+  Serial.print("msg: ");
+  Serial.println(command);
+
+  if(strcmp(command, "001") == 0)           //Received Request for data message
     publishDataMessage();
-  else if(rcvMsg == "002")
+  else if(strcmp(command, "002") == 0)
   {
 
+  }else if(strcmp(command, "003") == 0)
+  {
+    setRTCTime(doc);         //Received the server time
   }
+}
+
+void setRTCTime(DynamicJsonDocument doc)
+{
+  unsigned long time = doc["time"];
+  Serial.print("Time: ");
+  Serial.println(time);
+
+  hourlyData = true;
+  rtc.begin();
+  rtc.setEpoch(time);
+  SetRTC_Alarm();
+  rtc.enableAlarm(rtc.MATCH_HHMMSS);
+  rtc.attachInterrupt(RTC_Alarm);
+
+  Serial.print("RTC TIME: ");
+  print2digits(rtc.getHours());
+  Serial.print(":");
+  print2digits(rtc.getMinutes());
+  Serial.print(":");
+  print2digits(rtc.getSeconds());
+  Serial.println();
+}
+
+
+void print2digits(int number) {
+  if (number < 10) {
+    Serial.print("0"); // print a 0 before if the number is < than 10
+  }
+  Serial.print(number);
 }

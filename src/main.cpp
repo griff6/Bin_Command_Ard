@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "main.h"
 #include "AM2315.h"
 #include "SharedResources.h"
 #include "BME280.h"
@@ -6,11 +7,16 @@
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
 #include "manageConnections.h"
-
-
+//
 
 FilteredValues filteredValues;
+CableValues cable1;
+CableValues cable2;
+CableValues cable3;
 int accState;
+int currentBatch;
+bool hourlyData;
+RTCZero rtc;
 
 long mqttInterval = 500;    //Poll the mqtt every 500 ms
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM
@@ -25,6 +31,7 @@ long prevDataChannel = 0;
 
 bool firstLoop = true;
 
+
 void setup() {
   Serial.begin(9600);
   // Wait for 20 seconds to see if Serial is connected, otherwise run the Sktech without Serial debugging
@@ -36,6 +43,7 @@ void setup() {
 
   Serial.println("Starting the Program");
   accState = 0;
+
   Wire.begin();
 
   InitiallizeConnections();
@@ -47,6 +55,8 @@ void setup() {
   SetupBME280();
 
   StartAM2315();
+
+
 
   Serial.println("Program Initiallized");
 }
@@ -74,6 +84,7 @@ void loop() {
     prevRPMCalc = currentMillis;
   }
 
+
   //This is to collect the data and print it to the serial port
   if(currentMillis - prevPrint >= printInterval || firstLoop == true)
   {
@@ -83,10 +94,38 @@ void loop() {
     PrintBME280Data();
     GetFanData();
     //GetGSMLocation();
-    Serial.println();
-
+    Serial.print(".");
+    //HandleHourlyData();
     prevPrint = currentMillis;
-    firstLoop = false;
 
   }
+
+  if(hourlyData){
+    HandleHourlyData();
+    //Serial.println("RTC_Alarm Fired");
+    SetRTC_Alarm();
+    hourlyData = false;
+  }
 }
+/*
+void SetRTC_Alarm()
+{
+  uint8_t hour = rtc.getHours();
+  uint8_t minutes = rtc.getMinutes();
+
+  //Serial.println("Setting RTC");
+  Serial.print(hour);
+  Serial.print(":");
+  Serial.println(minutes);
+
+  rtc.setAlarmTime(hour, minutes+10, 0);
+}
+
+void RTC_Alarm()
+{
+
+  //HandleHourlyData();
+  hourlyData = true;
+
+}
+*/
