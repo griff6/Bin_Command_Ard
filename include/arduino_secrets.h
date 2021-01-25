@@ -5,7 +5,7 @@
 #define SECRET_GPRS_PASSWORD " " // replace with your GPRS password
 
 // Fill in your Google Cloud Platform - IoT Core info
-#define SECRET_PROJECT_ID   "bin-command"
+#define SECRET_PROJECT_ID   "bin-command-2"
 #define SECRET_CLOUD_REGION "us-central1"
 #define SECRET_REGISTRY_ID  "Registry_1"
-#define SECRET_DEVICE_ID    "Test1"
+#define SECRET_DEVICE_ID    "F50A0001"

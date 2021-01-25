@@ -36,6 +36,12 @@ public:
   float avgM = 65536;
 };
 
+enum EngineControl{
+  OFF,
+  ON,
+  AUTO
+};
+
 extern float maxTemp;
 extern float minTemp;
 extern float avgTemp;
@@ -49,6 +55,7 @@ extern CableValues cable2;
 extern CableValues cable3;
 extern int accState;
 extern int currentBatch;
+extern EngineControl engineControl;
 
 extern RTCZero rtc;
 extern bool hourlyData;

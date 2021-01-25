@@ -365,9 +365,18 @@ void onMessageReceived(int messageSize) {
   else if(strcmp(command, "002") == 0)
   {
 
-  }else if(strcmp(command, "003") == 0)
+  }else if(strcmp(command, "003") == 0)   //Received the server time
   {
-    setRTCTime(doc);         //Received the server time
+    setRTCTime(doc);
+  }else if(strcmp(command, "004") == 0)   //Turn Engine OFF
+  {
+    engineControl = OFF;
+  }else if(strcmp(command, "005") == 0)   //Turn Engine ON
+  {
+    engineControl = ON;
+  }else if(strcmp(command, "006") == 0)   //Turn Engine to AUTO
+  {
+    engineControl = AUTO;
   }
 }
 
