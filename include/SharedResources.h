@@ -36,10 +36,16 @@ public:
   float avgM = 65536;
 };
 
-enum EngineControl{
+enum EngineCommand{
   OFF,
   ON,
   AUTO
+};
+
+enum EngineState{
+  STOPPED,
+  STARTING,
+  RUNNING,
 };
 
 extern float maxTemp;
@@ -53,9 +59,12 @@ extern FilteredValues filteredValues;
 extern CableValues cable1;
 extern CableValues cable2;
 extern CableValues cable3;
-extern int accState;
 extern int currentBatch;
-extern EngineControl engineControl;
+extern EngineCommand userEngineCommand;
+extern EngineState engineState;
+extern bool startEngine;
+extern int starterAttempt;
+extern bool updateEngineState;
 
 extern RTCZero rtc;
 extern bool hourlyData;

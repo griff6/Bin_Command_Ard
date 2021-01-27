@@ -7,10 +7,14 @@
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
 #include "manageConnections.h"
-//
+
 
 FilteredValues filteredValues;
-EngineControl engineControl;
+EngineCommand userEngineCommand = OFF;
+EngineState engineState = STOPPED;
+bool startEngine = false;
+int starterAttempt = 500;
+bool updateEngineState = false;
 CableValues cable1;
 CableValues cable2;
 CableValues cable3;
@@ -43,7 +47,7 @@ void setup() {
   }
 
   Serial.println("Starting the Program");
-  accState = 0;
+  //accState = 0;
 
   Wire.begin();
 
@@ -98,7 +102,7 @@ void loop() {
     Serial.print(".");
     //HandleHourlyData();
     prevPrint = currentMillis;
-
+    firstLoop = false;
   }
 
   if(hourlyData){
@@ -107,26 +111,19 @@ void loop() {
     SetRTC_Alarm();
     hourlyData = false;
   }
-}
+
+  EngineController();
+
 /*
-void SetRTC_Alarm()
-{
-  uint8_t hour = rtc.getHours();
-  uint8_t minutes = rtc.getMinutes();
+  if(setEngineControl != WAITING)
+  {
+    if(setEngineControl == ON)
+    {
+      startEngine = true;
+    }
 
-  //Serial.println("Setting RTC");
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.println(minutes);
-
-  rtc.setAlarmTime(hour, minutes+10, 0);
+    if(startEngine)
+      EngineStartSequence();
+  }
+  */
 }
-
-void RTC_Alarm()
-{
-
-  //HandleHourlyData();
-  hourlyData = true;
-
-}
-*/

@@ -1,5 +1,6 @@
 #include "manageConnections.h"
 #include "gsmConnection.h"
+#include "SharedResources.h"
 
 bool gsmConnected = false;
 
@@ -18,6 +19,10 @@ void MaintainConnections()
     MQTT_Poll();
     //RequestTimeStamp();
   //  GetLocation();
+    if(updateEngineState)
+    {
+      publishEngineState();
+    }
   }
 }
 

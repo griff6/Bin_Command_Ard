@@ -7,6 +7,7 @@
 #include <MKRGSM.h>
 #include <ArduinoJson.h>
 #include "SharedResources.h"
+#include "Engine_Control.h"
 
 /////// Enter your sensitive data in arduino_secrets.h
 const char pinnumber[]     = SECRET_PINNUMBER;
@@ -70,8 +71,8 @@ bool connectGSM() {
   }
   Serial.println("Attempting to connect to the cellular network");
 
-  while((counter < 3 && (gsmAccess.begin(pinnumber) != GSM_READY) ||
-         (gprs.attachGPRS(gprs_apn, gprs_login, gprs_password) != GPRS_READY))) {
+  while(((counter < 3) && ((gsmAccess.begin(pinnumber) != GSM_READY))) ||
+         (gprs.attachGPRS(gprs_apn, gprs_login, gprs_password) != GPRS_READY)) {
     // failed, retry
     //Serial.print(counter++);
     Serial.println("Failed Connection Attempt");
@@ -226,18 +227,18 @@ void publishDataMessage() {
   doc["fs"] = fanStatus;
   doc["fh"] = filteredValues.filteredFanHumidity;
   doc["ft"] = filteredValues.filteredFanTemp;
-  doc["sp"] = filteredValues.filteredSP;
-  doc["minT"] = 0.000001;
-  doc["maxT"] = 0.000001;
-  doc["avT"] = 0.000001;
-  doc["minM"] = 0.000001;
-  doc["maxM"] = 0.000001;
-  doc["avM"] = 0.000001;
+  doc["sp"] = filteredValues.filteredSP;//serialized(String(filteredValues.filteredSP,1));
+  doc["minT"] = 0;
+  doc["maxT"] = 0;
+  doc["avT"] = 0;
+  doc["minM"] = 0;
+  doc["maxM"] = 0;
+  doc["avM"] = 0;
   doc["mode"] = 1;
   doc["bn"] = currentBatch;
-  doc["ber"] = 0.000001;
-  doc["bat"] = 0.000001;
-  doc["bdt"] = 0.000001;
+  doc["ber"] = 0;
+  doc["bat"] = 0;
+  doc["bdt"] = 0;
   doc["gn"] = "TestCrop";
 
   serializeJson(doc, mqttClient);
@@ -281,6 +282,32 @@ void publishMaxMins() {
   serializeJsonPretty(doc, Serial);
   Serial.println();
   Serial.println("Published Message.");
+}
+
+void publishEngineState() {
+
+  Serial.println();
+  Serial.println("Publishing engine state");
+  mqttClient.beginMessage("/devices/" + deviceId + "/events/ENGINE_STATE");
+
+  const size_t capacity = JSON_OBJECT_SIZE(1);
+  //DynamicJsonDocument doc(capacity);
+  //DynamicJsonDocument doc(431);
+
+  StaticJsonDocument<capacity> doc;
+
+  if(engineState == STOPPED || engineState == STARTING)
+    doc["fs"] = true;
+  else if(engineState == RUNNING)
+    doc["fs"] = false;
+
+
+  serializeJson(doc, mqttClient);
+  mqttClient.endMessage();
+  serializeJsonPretty(doc, Serial);
+  Serial.println();
+
+  updateEngineState = false;
 }
 
 void RequestTimeStamp() {
@@ -370,13 +397,21 @@ void onMessageReceived(int messageSize) {
     setRTCTime(doc);
   }else if(strcmp(command, "004") == 0)   //Turn Engine OFF
   {
-    engineControl = OFF;
+    userEngineCommand = OFF;
+    Serial.println();
+    //Serial.println("Received command to turn engine OFF (gsmConnection - onMesssageReceived())");
   }else if(strcmp(command, "005") == 0)   //Turn Engine ON
   {
-    engineControl = ON;
+    startEngine = true;
+    starterAttempt = 0;
+    userEngineCommand = ON;
+    Serial.println();
+  //Serial.println("Received command to turn engine ON (gsmConnection - onMesssageReceived())");
+    //Serial.print("Set userEngineCommand to: ");
+    //Serial.println(userEngineCommand);
   }else if(strcmp(command, "006") == 0)   //Turn Engine to AUTO
   {
-    engineControl = AUTO;
+    //TODO: Handle when the engine gets changed to AUTO
   }
 }
 

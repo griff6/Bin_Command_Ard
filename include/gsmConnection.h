@@ -8,6 +8,7 @@ String calculateClientId();
 String calculateJWT();
 void MQTT_Poll();
 void publishDataMessage();
+void publishEngineState();
 void RequestTimeStamp();
 void GetLocation();
 void onMessageReceived(int messageSize);

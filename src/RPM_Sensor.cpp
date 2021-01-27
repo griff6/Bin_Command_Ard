@@ -25,12 +25,13 @@ void Calculate_RPM(unsigned long diffTime)
 
   pulseCount = 0;
 }
-
+/*
 void Print_RPM()
 {
   String RPM = "RPM,";
   RPM += filteredValues.filteredRPM;
 }
+*/
 
 void Save_RPM()
 {
