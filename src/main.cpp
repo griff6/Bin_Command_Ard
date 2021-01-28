@@ -9,9 +9,12 @@
 #include "manageConnections.h"
 
 
+
 FilteredValues filteredValues;
+Config config;
 EngineCommand userEngineCommand = OFF;
 EngineState engineState = STOPPED;
+FanMode fanMode = DRY;
 bool startEngine = false;
 int starterAttempt = 500;
 bool updateEngineState = false;
@@ -22,6 +25,7 @@ int accState;
 int currentBatch;
 bool hourlyData;
 RTCZero rtc;
+
 
 long mqttInterval = 500;    //Poll the mqtt every 500 ms
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM
@@ -47,7 +51,7 @@ void setup() {
   }
 
   Serial.println("Starting the Program");
-  //accState = 0;
+  InitiallizeSD();
 
   Wire.begin();
 

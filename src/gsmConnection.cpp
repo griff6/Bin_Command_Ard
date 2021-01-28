@@ -234,12 +234,12 @@ void publishDataMessage() {
   doc["minM"] = 0;
   doc["maxM"] = 0;
   doc["avM"] = 0;
-  doc["mode"] = 1;
+  doc["mode"] = fanMode;
   doc["bn"] = currentBatch;
-  doc["ber"] = 0;
-  doc["bat"] = 0;
-  doc["bdt"] = 0;
-  doc["gn"] = "TestCrop";
+  doc["ber"] = config.batchEngineTime;
+  doc["bat"] = config.batchAerateTime;
+  doc["bdt"] = config.batchDryingTime;
+  doc["gn"] = config.grain;
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
@@ -384,6 +384,7 @@ void onMessageReceived(int messageSize) {
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, rcvMsg);
   const char* command = doc["msg"];
+  const char* attribute1 = doc["attribute1"];
   Serial.print("msg: ");
   Serial.println(command);
 
@@ -412,6 +413,12 @@ void onMessageReceived(int messageSize) {
   }else if(strcmp(command, "006") == 0)   //Turn Engine to AUTO
   {
     //TODO: Handle when the engine gets changed to AUTO
+  }else if(strcmp(command, "007") == 0)      //Start new currentBatch
+  {
+    Serial.println();
+    Serial.print("Received start new batch command with grain: ");
+    Serial.println(attribute1);
+    StartNewBatch(attribute1);
   }
 }
 
