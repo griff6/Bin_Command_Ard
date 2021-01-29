@@ -53,7 +53,7 @@ enum FanMode{
 };
 
 struct Config{
-  char grain[20];
+  char grain[30];
   int batchNumber;
   float engineTime;
   float batchEngineTime;
@@ -72,7 +72,7 @@ extern FilteredValues filteredValues;
 extern CableValues cable1;
 extern CableValues cable2;
 extern CableValues cable3;
-extern int currentBatch;
+//extern int currentBatch;
 extern EngineCommand userEngineCommand;
 extern EngineState engineState;
 extern FanMode fanMode;
@@ -88,6 +88,8 @@ void filterValue(float newReading, float &filtValue, float fc);
 void SetRTC_Time(uint32_t unixTime);
 void SetRTC_Alarm();
 void RTC_Alarm();
+void SetEngineTimerAlarm();
+void EngineTimerAlarm();
 void InitiallizeSD();
 void GetConfigFile();
 void SaveConfigFile();

@@ -139,6 +139,8 @@ void connectMQTT() {
 
   RequestTimeStamp();
 
+  publishEngineState();
+
   //mqttClient.subscribe("/devices/" + deviceId + "/commands/#");
   //mqttClient.subscribe("/projects/" + projID + "/subscriptions/my-sub");
 }
@@ -215,7 +217,7 @@ void publishDataMessage() {
   //https://arduinojson.org/v5/assistant/
   //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
   //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
-  const size_t capacity = JSON_OBJECT_SIZE(19);
+  const size_t capacity = JSON_OBJECT_SIZE(20);
   //DynamicJsonDocument doc(capacity);
   //DynamicJsonDocument doc(431);
 
@@ -235,11 +237,14 @@ void publishDataMessage() {
   doc["maxM"] = 0;
   doc["avM"] = 0;
   doc["mode"] = fanMode;
-  doc["bn"] = currentBatch;
+  doc["bn"] = config.batchNumber;
   doc["ber"] = config.batchEngineTime;
   doc["bat"] = config.batchAerateTime;
   doc["bdt"] = config.batchDryingTime;
   doc["gn"] = config.grain;
+
+  Serial.print("Crop in publishDataMessage(): ");
+  Serial.println(config.grain);
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
@@ -424,13 +429,13 @@ void onMessageReceived(int messageSize) {
 
 void setRTCTime(DynamicJsonDocument doc)
 {
-  String t1 = doc["time"];
-  Serial.print("T1: ");
-  Serial.println(t1);
+  //String t1 = doc["time"];
+  //Serial.print("T1: ");
+  //Serial.println(t1);
 
   unsigned long time = doc["time"];
-  Serial.print("Time: ");
-  Serial.println(time);
+  //Serial.print("Time: ");
+  //Serial.println(time);
 
   hourlyData = true;
   rtc.begin();

@@ -7,6 +7,7 @@
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
 #include "manageConnections.h"
+#include "gsmConnection.h"
 
 
 
@@ -21,22 +22,21 @@ bool updateEngineState = false;
 CableValues cable1;
 CableValues cable2;
 CableValues cable3;
-int accState;
-int currentBatch;
+//int accState;
 bool hourlyData;
 RTCZero rtc;
 
 
-long mqttInterval = 500;    //Poll the mqtt every 500 ms
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM
-long printInterval = 10000;//60000;   //how often the program will print the data out (60000 is 1 minute)
-long dataChannelInterval = 60000;//1800000;//3600000;    //Update Every Hour
-long engineTimeInterval = 60000;   //update every minute
-long prevMqttCalc = 0;
+long printInterval = 60000;//60000;   //how often the program will print the data out (60000 is 1 minute)
+long configSaveInterval = 60000;
+long engineTimerInterval = 60000;
 long prevRPMCalc = 0;
 long prevPrint = 0;
-long prevEngineTime = 0;
-long prevDataChannel = 0;
+long prevConfigSave = 0;
+long lastEngineTime = 0;
+float updateTime;
+
 
 bool firstLoop = true;
 
@@ -65,7 +65,10 @@ void setup() {
 
   StartAM2315();
 
+//SetEngineTimerAlarm();
 
+  //SetEngineTimerAlarm();
+  lastEngineTime = millis();
 
   Serial.println("Program Initiallized");
 }
@@ -109,25 +112,64 @@ void loop() {
     firstLoop = false;
   }
 
+  //This is to collect the data and print it to the serial port
+  if(currentMillis - prevPrint >= printInterval || firstLoop == true)
+  {
+    Save_RPM();
+
+    GetPressure();
+    PrintBME280Data();
+    GetFanData();
+    //GetGSMLocation();
+    Serial.print(".");
+    //HandleHourlyData();
+
+    prevPrint = currentMillis;
+    firstLoop = false;
+  }
+
   if(hourlyData){
     HandleHourlyData();
     //Serial.println("RTC_Alarm Fired");
     SetRTC_Alarm();
     hourlyData = false;
   }
-
   EngineController();
 
-/*
-  if(setEngineControl != WAITING)
-  {
-    if(setEngineControl == ON)
-    {
-      startEngine = true;
-    }
+  if(currentMillis - lastEngineTime >= engineTimerInterval){
 
-    if(startEngine)
-      EngineStartSequence();
+    if(engineState == RUNNING)
+    {
+    //  long temp = millis();
+      long tempTime = millis() - lastEngineTime;
+      float update = tempTime;
+
+      updateTime = update / 3600000; //convert the time from ms to hours
+
+      Serial.print("   updateTime: ");
+      Serial.println(updateTime);
+
+      config.engineTime += updateTime;
+      config.batchEngineTime += updateTime;
+
+      if(fanMode == AERATE)
+      {
+        config.batchAerateTime += updateTime;
+      }if(fanMode == DRY){
+        config.batchDryingTime += updateTime;
+      }
+    }
+    Serial.print("Engine Time: ");
+    Serial.println(config.engineTime);
+
+    lastEngineTime = millis();
   }
-  */
+
+//Save the configuration file
+  if(currentMillis - prevConfigSave >= configSaveInterval)
+  {
+    SaveConfigFile();
+    prevConfigSave = currentMillis;
+  }
+
 }

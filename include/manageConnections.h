@@ -4,4 +4,4 @@ void InitiallizeConnections();
 void MaintainConnections();
 void GetGSMLocation();
 void HandleHourlyData();
-void SetRTC_Alarm();
+//void SetRTC_Alarm();

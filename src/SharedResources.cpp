@@ -3,12 +3,14 @@
 #include <SD.h>
 #include <SPI.h>
 #include <ArduinoJson.h>
+#include "gsmConnection.h"
 
 FlashStorage(grainType_Flash, String);
-FlashStorage(engineTime_Flash, unsigned long);
-FlashStorage(batchEngineTime_Flash, unsigned long);
-FlashStorage(batchDryingTime_Flash, unsigned long);
-FlashStorage(batchAerationTime_Flash, unsigned long);
+FlashStorage(engineTime_Flash, float);
+FlashStorage(batchEngineTime_Flash, float);
+FlashStorage(batchDryingTime_Flash, float);
+FlashStorage(batchAerationTime_Flash, float);
+FlashStorage(batchNumber_Flash, int);
 
 const char *configFileName = "config.txt";
 
@@ -27,34 +29,60 @@ void filterValue(float newReading, float &filtValue, float fc)
 void SetRTC_Alarm()
 {
   uint8_t hour = rtc.getHours();
-  uint8_t minutes = rtc.getMinutes();
+  //uint8_t minutes = rtc.getMinutes();
 
   //Serial.println("Setting RTC");
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.println(minutes);
+  //Serial.print(hour);
+  //Serial.print(":");
+  //Serial.println(minutes);
 
-  rtc.setAlarmTime(hour+1, 0, 0);
+  if(hour >= 23)
+    hour = 0;
+  else
+    hour++;
+
+  rtc.setAlarmTime(hour, 0, 0);
 }
 
 void RTC_Alarm()
 {
   hourlyData = true;
 }
-
-void ReadFlashValues()
+/*
+void SetEngineTimerAlarm()
 {
+  uint8_t hour = rtc.getHours();
+  uint8_t minutes = rtc.getMinutes()+1;
 
+  Serial.println("Engine Timer Alarm Fired");
+  Serial.print(hour);
+  Serial.print(":");
+  Serial.println(rtc.getMinutes());
+
+  if(minutes >= 60){
+    minutes = 0;
+    hour++;
+  }
+
+  Serial.print(hour);
+  Serial.print(":");
+  Serial.println(minutes);
+
+  engineTimer.setAlarmTime(hour,minutes,0);
 }
+
+void EngineTimerAlarm()
+{
+  SetEngineTimerAlarm();
+  updateEngineTimes = true;
+}
+*/
 
 void InitiallizeSD()
 {
   Serial.print("Initializing SD card...");
 
-  unsigned long tempEngineTime = engineTime_Flash.read();
-  unsigned long tempBatchEngineTime = batchEngineTime_Flash.read();
-  unsigned long tempBatchDryingTime = batchDryingTime_Flash.read();
-  unsigned long tempBatchAerationTime = batchAerationTime_Flash.read();
+  float tempEngineTime = engineTime_Flash.read();
 
   if (!SD.begin(0)) {
     Serial.println("Could not initiallize SD card");
@@ -68,37 +96,11 @@ void InitiallizeSD()
       File file = SD.open(configFileName, FILE_WRITE);
       file.close();
 
-      if(tempEngineTime >= 0)
-        config.engineTime = tempEngineTime;
-      else{
-          engineTime_Flash.write(0);
-          config.engineTime = 0;
-      }
-
-      if(tempBatchEngineTime >= 0)
-      {
-        config.batchEngineTime = tempBatchEngineTime;
-      }else{
-        batchEngineTime_Flash.write(0);
-        config.batchEngineTime = 0;
-      }
-
-      if(tempBatchDryingTime >= 0)
-      {
-        config.batchDryingTime = tempBatchDryingTime;
-      }else{
-        batchDryingTime_Flash.write(0);
-        config.batchDryingTime = 0;
-      }
-
-      if(tempBatchAerationTime >= 0)
-      {
-        config.batchAerateTime = tempBatchAerationTime;
-      }else{
-        batchAerationTime_Flash.write(0);
-        config.batchAerateTime = 0;
-      }
-
+      config.engineTime = tempEngineTime;
+      config.batchEngineTime = batchEngineTime_Flash.read();
+      config.batchDryingTime = batchDryingTime_Flash.read();
+      config.batchAerateTime = batchAerationTime_Flash.read();
+      config.batchNumber = batchNumber_Flash.read();
       grainType_Flash.read().toCharArray(config.grain, sizeof(config.grain));
 
       SaveConfigFile();
@@ -109,29 +111,23 @@ void InitiallizeSD()
 
       grainType_Flash.write(config.grain);
 
-      if(tempEngineTime > config.engineTime)
+      if(tempEngineTime < config.engineTime)
       {
+        Serial.println("Using configuration file values");
         engineTime_Flash.write(config.engineTime);
-      }else{
-        config.engineTime = tempEngineTime;
-      }
-
-      if(tempBatchEngineTime > config.batchEngineTime){
         batchEngineTime_Flash.write(config.batchEngineTime);
-      }else{
-        config.batchEngineTime = tempBatchEngineTime;
-      }
-
-      if(tempBatchDryingTime > config.batchDryingTime){
         batchDryingTime_Flash.write(config.batchDryingTime);
-      }else{
-        config.batchDryingTime = tempBatchDryingTime;
-      }
-
-      if(tempBatchAerationTime > config.batchAerateTime){
         batchAerationTime_Flash.write(config.batchAerateTime);
+        batchNumber_Flash.write(config.batchNumber);
+        grainType_Flash.write(config.grain);
       }else{
-        config.batchAerateTime = tempBatchAerationTime;
+        Serial.println("Using flash memory configuration values");
+        config.engineTime = tempEngineTime;
+        config.batchEngineTime = batchEngineTime_Flash.read();
+        config.batchDryingTime = batchDryingTime_Flash.read();
+        config.batchAerateTime = batchAerationTime_Flash.read();
+        config.batchNumber = batchNumber_Flash.read();
+        grainType_Flash.read().toCharArray(config.grain, sizeof(config.grain));
       }
     }
   }
@@ -142,7 +138,7 @@ void GetConfigFile()
   Serial.println("Reading Configuration File");
   File file = SD.open(configFileName);
 
-  const size_t capacity = JSON_OBJECT_SIZE(12);
+  const size_t capacity = JSON_OBJECT_SIZE(30);
   StaticJsonDocument<capacity> doc;
 
   DeserializationError error = deserializeJson(doc, file);
@@ -150,10 +146,11 @@ void GetConfigFile()
     Serial.print("Failed to read from the configuration file");
 
   strlcpy(config.grain, doc["grain"] | "", sizeof(config.grain));
-  config.engineTime = doc["engineTime"] | 0;
-  config.batchEngineTime = doc["batchEngineTime"] | 0;
-  config.batchDryingTime = doc["batchDryingTime"] | 0;
-  config.batchAerateTime = doc["batchAerateTime"] | 0;
+  config.batchNumber = doc["batchNumber"];
+  config.engineTime = doc["engineTime"];
+  config.batchEngineTime = doc["batchEngineTime"];
+  config.batchDryingTime = doc["batchDryingTime"];
+  config.batchAerateTime = doc["batchAerateTime"];
 
   serializeJsonPretty(doc, Serial);
   Serial.println();
@@ -172,10 +169,11 @@ void SaveConfigFile()
     return;
   }
 
-  const size_t capacity = JSON_OBJECT_SIZE(6);
+  const size_t capacity = JSON_OBJECT_SIZE(30);
   StaticJsonDocument<capacity> doc;
 
   doc["grain"] = config.grain;
+  doc["batchNumber"] = config.batchNumber;
   doc["engineTime"] = config.engineTime;
   doc["batchEngineTime"] = config.batchEngineTime;
   doc["batchDryingTime"] = config.batchDryingTime;
@@ -191,14 +189,30 @@ void SaveConfigFile()
 
   file.close();
 
-  grainType_Flash.write(config.grain);
   engineTime_Flash.write(config.engineTime);
   batchEngineTime_Flash.write(config.batchEngineTime);
   batchDryingTime_Flash.write(config.batchDryingTime);
   batchAerationTime_Flash.write(config.batchAerateTime);
+  batchNumber_Flash.write(config.batchNumber);
+  grainType_Flash.write(config.grain);
 }
 
 void StartNewBatch(const char *grainName)
 {
   strlcpy(config.grain, grainName, sizeof(config.grain));
+  config.batchNumber++;
+  config.batchEngineTime = 0;
+  config.batchDryingTime = 0;
+  config.batchAerateTime = 0;
+
+  engineTime_Flash.write(config.engineTime);
+  batchEngineTime_Flash.write(config.batchEngineTime);
+  batchDryingTime_Flash.write(config.batchDryingTime);
+  batchAerationTime_Flash.write(config.batchAerateTime);
+  batchNumber_Flash.write(config.batchNumber);
+  grainType_Flash.write(config.grain);
+
+  SaveConfigFile();
+
+  publishDataMessage();
 }
