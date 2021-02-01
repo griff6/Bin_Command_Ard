@@ -8,6 +8,7 @@
 #include "RPM_Sensor.h"
 #include "manageConnections.h"
 #include "gsmConnection.h"
+#include "binCables.h"
 
 
 
@@ -19,9 +20,6 @@ FanMode fanMode = DRY;
 bool startEngine = false;
 int starterAttempt = 500;
 bool updateEngineState = false;
-CableValues cable1;
-CableValues cable2;
-CableValues cable3;
 //int accState;
 bool hourlyData;
 RTCZero rtc;
@@ -55,7 +53,7 @@ void setup() {
 
   Wire.begin();
 
-  InitiallizeConnections();
+//  InitiallizeConnections();
 
   SetupRPMSensor();
   SetupPressure();
@@ -65,15 +63,18 @@ void setup() {
 
   StartAM2315();
 
-//SetEngineTimerAlarm();
+  SetupBinCables();
 
-  //SetEngineTimerAlarm();
   lastEngineTime = millis();
 
   Serial.println("Program Initiallized");
 }
 
 void loop() {
+
+  GetBinCableValues();
+
+  /*
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
@@ -171,5 +172,7 @@ void loop() {
     SaveConfigFile();
     prevConfigSave = currentMillis;
   }
+
+  */
 
 }

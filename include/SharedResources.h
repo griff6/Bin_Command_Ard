@@ -70,9 +70,9 @@ extern float minMoisture;
 extern float avgMoisture;
 
 extern FilteredValues filteredValues;
-extern CableValues cable1;
-extern CableValues cable2;
-extern CableValues cable3;
+//extern CableValues cable1;
+//extern CableValues cable2;
+//extern CableValues cable3;
 //extern int currentBatch;
 extern EngineCommand userEngineCommand;
 extern EngineState engineState;

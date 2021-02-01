@@ -48,35 +48,6 @@ void RTC_Alarm()
 {
   hourlyData = true;
 }
-/*
-void SetEngineTimerAlarm()
-{
-  uint8_t hour = rtc.getHours();
-  uint8_t minutes = rtc.getMinutes()+1;
-
-  Serial.println("Engine Timer Alarm Fired");
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.println(rtc.getMinutes());
-
-  if(minutes >= 60){
-    minutes = 0;
-    hour++;
-  }
-
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.println(minutes);
-
-  engineTimer.setAlarmTime(hour,minutes,0);
-}
-
-void EngineTimerAlarm()
-{
-  SetEngineTimerAlarm();
-  updateEngineTimes = true;
-}
-*/
 
 void InitiallizeSD()
 {
