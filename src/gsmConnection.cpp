@@ -301,10 +301,12 @@ void publishEngineState() {
 
   StaticJsonDocument<capacity> doc;
 
-  if(engineState == STOPPED || engineState == STARTING)
-    doc["fs"] = true;
-  else if(engineState == RUNNING)
-    doc["fs"] = false;
+  //if(engineState == STOPPED || engineState == STARTING)
+    //doc["fs"] = 1;
+  //else if(engineState == RUNNING)
+    //doc["fs"] = 0;
+
+  doc["fs"] = engineState;
 
 
   serializeJson(doc, mqttClient);
@@ -313,6 +315,28 @@ void publishEngineState() {
   Serial.println();
 
   updateEngineState = false;
+}
+
+void updateLiveData() {
+
+  Serial.println();
+  Serial.println("Publishing live data");
+  mqttClient.beginMessage("/devices/" + deviceId + "/events/LIVE_DATA");
+
+  const size_t capacity = JSON_OBJECT_SIZE(3);
+  //DynamicJsonDocument doc(capacity);
+  //DynamicJsonDocument doc(431);
+
+  StaticJsonDocument<capacity> doc;
+
+  doc["rpm"] = filteredValues.filteredRPM;
+  doc["sp"] = filteredValues.filteredSP;
+  doc["eh"] = config.engineTime;
+
+  serializeJson(doc, mqttClient);
+  mqttClient.endMessage();
+  serializeJsonPretty(doc, Serial);
+  Serial.println();
 }
 
 void RequestTimeStamp() {
@@ -395,9 +419,9 @@ void onMessageReceived(int messageSize) {
 
   if(strcmp(command, "001") == 0)           //Received Request for data message
     publishDataMessage();
-  else if(strcmp(command, "002") == 0)
+  else if(strcmp(command, "002") == 0)    //Request for live data
   {
-
+    updateLiveData();
   }else if(strcmp(command, "003") == 0)   //Received the server time
   {
     setRTCTime(doc);

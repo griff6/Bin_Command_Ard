@@ -152,15 +152,15 @@ void GetConfigFile()
   config.batchDryingTime = doc["batchDryingTime"];
   config.batchAerateTime = doc["batchAerateTime"];
 
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
+  //serializeJsonPretty(doc, Serial);
+  //Serial.println();
 
   file.close();
 }
 
 void SaveConfigFile()
 {
-  Serial.println("Saving Configuration");
+  //Serial.println("Saving Configuration");
   SD.remove(configFileName);
 
   File file = SD.open(configFileName, FILE_WRITE);
@@ -184,8 +184,8 @@ void SaveConfigFile()
     Serial.println("Failed to write the configuration file");
   }
 
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
+  //serializeJsonPretty(doc, Serial);
+  //Serial.println();
 
   file.close();
 

@@ -74,8 +74,12 @@ void EngineStartSequence()
     }
   } else
   {
+    //Serial.println("Failed to start engine");
+
     startEngine = false;
     starterAttempt = 500;
+    engineState = FAILED_START;
+    updateEngineState = true;
   }
 }
 

@@ -159,8 +159,8 @@ void loop() {
         config.batchDryingTime += updateTime;
       }
     }
-    Serial.print("Engine Time: ");
-    Serial.println(config.engineTime);
+    //Serial.print("Engine Time: ");
+    //Serial.println(config.engineTime);
 
     lastEngineTime = millis();
   }

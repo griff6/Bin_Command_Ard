@@ -45,6 +45,7 @@ enum EngineState{
   STOPPED,
   STARTING,
   RUNNING,
+  FAILED_START,
 };
 
 enum FanMode{
