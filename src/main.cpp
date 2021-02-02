@@ -14,6 +14,7 @@
 
 FilteredValues filteredValues;
 Config config;
+CableValues cableValues[3];
 EngineCommand userEngineCommand = OFF;
 EngineState engineState = STOPPED;
 FanMode fanMode = DRY;
@@ -23,6 +24,13 @@ bool updateEngineState = false;
 //int accState;
 bool hourlyData;
 RTCZero rtc;
+float maxTemp;
+float minTemp;
+float avgTemp;
+float maxMoisture;
+float minMoisture;
+float avgMoisture;
+int numCables = 0;
 
 
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM
@@ -53,7 +61,7 @@ void setup() {
 
   Wire.begin();
 
-//  InitiallizeConnections();
+  InitiallizeConnections();
 
   SetupRPMSensor();
   SetupPressure();
@@ -64,6 +72,7 @@ void setup() {
   StartAM2315();
 
   SetupBinCables();
+  CableValues cableValues[numCables];
 
   lastEngineTime = millis();
 
@@ -71,10 +80,6 @@ void setup() {
 }
 
 void loop() {
-
-  GetBinCableValues();
-
-  /*
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
@@ -97,25 +102,11 @@ void loop() {
     prevRPMCalc = currentMillis;
   }
 
-
   //This is to collect the data and print it to the serial port
   if(currentMillis - prevPrint >= printInterval || firstLoop == true)
   {
-    Save_RPM();
+    GetBinCableValues();
 
-    GetPressure();
-    PrintBME280Data();
-    GetFanData();
-    //GetGSMLocation();
-    Serial.print(".");
-    //HandleHourlyData();
-    prevPrint = currentMillis;
-    firstLoop = false;
-  }
-
-  //This is to collect the data and print it to the serial port
-  if(currentMillis - prevPrint >= printInterval || firstLoop == true)
-  {
     Save_RPM();
 
     GetPressure();
@@ -173,6 +164,6 @@ void loop() {
     prevConfigSave = currentMillis;
   }
 
-  */
+
 
 }

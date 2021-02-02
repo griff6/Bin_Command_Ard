@@ -201,6 +201,7 @@ void MQTT_Poll()
 void publishDataMessage() {
 
   int fanStatus = 0;
+  String cableNum = "C0";
 
   if(filteredValues.filteredRPM > 100)
   {
@@ -217,12 +218,33 @@ void publishDataMessage() {
   //https://arduinojson.org/v5/assistant/
   //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
   //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
-  const size_t capacity = JSON_OBJECT_SIZE(20);
+  //const size_t capacity;// = JSON_OBJECT_SIZE(20);// + JSON_OBJECT_SIZE(16*numCables);
   //DynamicJsonDocument doc(capacity);
   //DynamicJsonDocument doc(431);
+  //size_t capacity = JSON_OBJECT_SIZE(78);
 
-  StaticJsonDocument<capacity> doc;
+  //if(numCables == 0)
+//    capacity = JSON_OBJECT_SIZE(20);
+//  else
+//    capacity = JSON_OBJECT_SIZE(20);
 
+  String ts = "";
+  ts = ts + print2digits(rtc.getYear());
+  ts += "-";
+  ts += print2digits(rtc.getMonth());
+  ts += "-";
+  ts += print2digits(rtc.getDay());
+  ts += " ";
+  ts += print2digits(rtc.getHours());
+  ts += ":";
+  ts += print2digits(rtc.getMinutes());
+
+  //StaticJsonDocument<capacity> doc;
+  size_t capacity = JSON_OBJECT_SIZE(78);
+  DynamicJsonDocument doc(capacity);
+
+  doc["ts"] = ts;
+  doc["msg"] = 0;
   doc["ap"] = filteredValues.filteredAirPressure;
   doc["ah"] = filteredValues.filteredAirHumidity;
   doc["at"] = filteredValues.filteredAirTemp;
@@ -242,9 +264,86 @@ void publishDataMessage() {
   doc["bat"] = config.batchAerateTime;
   doc["bdt"] = config.batchDryingTime;
   doc["gn"] = config.grain;
+  doc["nc"] = numCables;
 
-  Serial.print("Crop in publishDataMessage(): ");
-  Serial.println(config.grain);
+  serializeJson(doc, mqttClient);
+  mqttClient.endMessage();
+  serializeJsonPretty(doc, Serial);
+  Serial.println();
+
+
+
+  for(int cable = 0; cable < numCables; cable++)
+  {
+    DynamicJsonDocument doc(capacity);
+
+    doc["ts"] = ts;
+    doc["msg"] = cable+1;
+
+    if(cable == 0)
+      cableNum = "C0T";
+    else if(cable == 1)
+      cableNum = "C1T";
+    else if(cable == 2)
+      cableNum == "C2T";
+
+    JsonArray cableTemp = doc.createNestedArray(cableNum);
+
+    for(int i = 0; i < cableValues[cable].numSensors; i++)
+    {
+      /*
+      if(cable == 0)
+        cableNum = "C0T";
+      else if(cable == 1)
+        cableNum = "C1T";
+      else if(cable == 2)
+        cableNum == "C2T";
+
+      cableNum += i;
+
+      doc[cableNum] = cableValues[cable].sensors[i].temperature;
+      */
+      cableTemp.add(cableValues[cable].sensors[i].temperature);
+    }
+
+
+
+    if(cable == 0)
+      cableNum = "C0M";
+    else if(cable == 1)
+      cableNum = "C1M";
+    else if(cable == 2)
+      cableNum == "C2M";
+
+    JsonArray cableMois = doc.createNestedArray(cableNum);
+
+    for(int i = 0; i < cableValues[cable].numSensors; i++)
+    {
+      /*
+      if(cable == 0)
+        cableNum = "C0M";
+      else if(cable == 1)
+        cableNum = "C1M";
+      else if(cable == 2)
+        cableNum == "C2M";
+
+      cableNum += i;
+
+      doc[cableNum] = cableValues[cable].sensors[i].moisture;
+      */
+      cableMois.add(cableValues[cable].sensors[i].moisture);
+    }
+
+    serializeJson(doc, mqttClient);
+    mqttClient.endMessage();
+    serializeJsonPretty(doc, Serial);
+    Serial.println();
+  }
+
+
+
+//  Serial.print("Crop in publishDataMessage(): ");
+  //Serial.println(config.grain);
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
@@ -467,7 +566,7 @@ void setRTCTime(DynamicJsonDocument doc)
   SetRTC_Alarm();
   rtc.enableAlarm(rtc.MATCH_HHMMSS);
   rtc.attachInterrupt(RTC_Alarm);
-
+/*
   Serial.print("RTC TIME: ");
   print2digits(rtc.getHours());
   Serial.print(":");
@@ -475,12 +574,18 @@ void setRTCTime(DynamicJsonDocument doc)
   Serial.print(":");
   print2digits(rtc.getSeconds());
   Serial.println();
+  */
 }
 
 
-void print2digits(int number) {
+String print2digits(int number) {
+  String ret = "";
+  ret = ret + number;
+
   if (number < 10) {
-    Serial.print("0"); // print a 0 before if the number is < than 10
+    //Serial.print("0"); // print a 0 before if the number is < than 10
+    ret = "0" + ret;
   }
-  Serial.print(number);
+  //Serial.print(number);
+  return ret;
 }

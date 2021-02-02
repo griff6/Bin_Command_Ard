@@ -2,5 +2,6 @@
 
 void SetupBinCables();
 void GetBinCableValues();
-float CalculateMoisture(float RH, int temperature);
+void GetMinMaxAddresses();
+double CalculateMoisture(float RH, int temperature);
 uint8_t findDevices(int pin);

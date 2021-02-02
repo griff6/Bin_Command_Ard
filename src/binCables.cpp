@@ -26,63 +26,173 @@ const double t2 = 0.00008;
 void SetupBinCables()
 {
   // Start up the library
-  cable1.begin();
+  cables[0].begin();
+  cables[1].begin();
+  cables[2].begin();
 
-  uint8_t devices = findDevices(3);
-  Serial.print("Found ");
-  Serial.print(devices);
-  Serial.println(" on cable 0");
-
+  GetMinMaxAddresses();
+/*
+  for(int i = 0; i < 3; i++)
+  {
+    uint8_t devices = findDevices(i);
+    Serial.print("Found ");
+    Serial.print(devices);
+    Serial.print(" on cable ");
+    Serial.println(i);
+  }
+*/
 }
 
 void GetBinCableValues()
 {
   uint8_t numDevices = 0;
-  //filteredValues.filtered
-  //byte addr[8];
+  int addr;
+  float temp;
+  int index;
+  float RH_lin;
+  float RH_true;
+  double moisture;
+  unsigned int SO_RH;
+
+  maxTemp = 0;
+  minTemp = 65536;
+  avgTemp = 0;
+  maxMoisture = 0;
+  minMoisture =65536;
+  avgMoisture = 0;
 
   for(int cable = 0; cable < 3; cable++)
   {
-    if(cable == 0)
-    {
-      cable1.requestTemperatures(); // Send the command to get temperatures
-      numDevices = cable1.getDeviceCount();
-      delay(10);
-    }
+    cables[cable].requestTemperatures(); // Send the command to get temperatures
+    numDevices = cables[cable].getDeviceCount();
+    delay(10);
 
     for(int i=0; i < numDevices; i++)
     {
+        addr = cables[cable].getUserDataByIndex(i);
+        temp = cables[cable].getTempCByIndex(i);
+        //Calculation is from SHT1x datasheet
+        //getMoisByIndex is from a modified one wire library.  Matt Reimer did the modifications
+        //https://github.com/mattdreimer/Arduino-Temperature-Control-Library
+        SO_RH = cables[cable].getMoisByIndex(i);
+        RH_lin = c1 + c2 * SO_RH + c3 * (SO_RH * SO_RH);//(see SHT11 datasheet for this under section 4)
+        RH_true = (temp - 25) * (t1 + t2 * SO_RH) + RH_lin;
+        moisture = CalculateMoisture(RH_true, temp);
+        index = addr - cableValues[cable].minAddress;
+
+        cableValues[cable].sensors[index].humidity = RH_true;
+        cableValues[cable].sensors[index].address = addr;
+        cableValues[cable].sensors[index].temperature = temp;
+        cableValues[cable].sensors[index].moisture = moisture;
+
+        if(temp > maxTemp)
+          maxTemp = temp;
+        if(temp < minTemp)
+          minTemp = temp;
+
+        if(moisture > maxMoisture)
+          maxMoisture = moisture;
+        if(moisture < minMoisture)
+          minMoisture = moisture;
+
+        cableValues[cable].avgM += moisture;
+        cableValues[cable].avgT += temp;
+/*
+        Serial.print("Address: ");
+        Serial.print(cableValues[cable].sensors[index].address);
+        Serial.print(",   ");
         Serial.print("T");
         Serial.print(i);
         Serial.print(" is: ");
-        int temp = cable1.getTempCByIndex(i);
-        Serial.print(temp);
+        Serial.print(cableValues[cable].sensors[index].temperature);
         Serial.print(",   ");
         Serial.print("H");
         Serial.print(i);
         Serial.print(" is: ");
-
-        //Calculation is from SHT1x datasheet
-        //getMoisByIndex is from a modified one wire library.  Matt Reimer did the modifications
-        //https://github.com/mattdreimer/Arduino-Temperature-Control-Library
-        unsigned int SO_RH = cable1.getMoisByIndex(i);
-        float RH_lin = c1 + c2 * SO_RH + c3 * (SO_RH * SO_RH);//(see SHT11 datasheet for this under section 4)
-        float RH_true = (temp - 25) * (t1 + t2 * SO_RH) + RH_lin;
-        double moisture = CalculateMoisture(RH_true, temp);
-
-        Serial.print(RH_true);
-
+        Serial.print(cableValues[cable].sensors[index].humidity);
         Serial.print(",   ");
         Serial.print("M");
         Serial.print(i);
         Serial.print(" is: ");
-        Serial.println(moisture);
+        Serial.println(cableValues[cable].sensors[index].moisture);
+        */
     }
+    cableValues[cable].avgM = cableValues[cable].avgM / numDevices;
+    cableValues[cable].avgT = cableValues[cable].avgT / numDevices;
+
+    if(numDevices > 0)
+    {
+      avgMoisture += cableValues[cable].avgM;
+      avgTemp += cableValues[cable].avgT;
+    }
+
+    Serial.print("Cable ");
+    Serial.print(cable);
+    Serial.print(" Average Temperature is ");
+    Serial.print(cableValues[cable].avgT);
+    Serial.print(" Average Moisture is ");
+    Serial.print(cableValues[cable].avgM);
     Serial.println();
+  }
+
+  if(numCables > 0){
+    avgMoisture = avgMoisture / numCables;
+    avgTemp = avgTemp / numCables;
+  }
+
+  Serial.print(" Average Temperature is ");
+  Serial.print(avgTemp);
+  Serial.print(" Average Moisture is ");
+  Serial.print(avgMoisture);
+  Serial.print(" Max Temperature is ");
+  Serial.print(maxTemp);
+  Serial.print(" Min Temperature is ");
+  Serial.print(minTemp);
+  Serial.print(" Max Moisture is ");
+  Serial.print(maxMoisture);
+  Serial.print(" Min Moisture is ");
+  Serial.print(minMoisture);
+  Serial.println();
+}
+
+void GetMinMaxAddresses()
+{
+  uint8_t numDevices = 0;
+
+  for(int cable = 0; cable < 3; cable++)
+  {
+//    cables[cable].requestTemperatures(); // Send the command to get temperatures
+    numDevices = cables[cable].getDeviceCount();
+    delay(10);
+
+    if(numDevices > 0)
+      numCables++;
+
+    cableValues[cable].numSensors = numDevices;
+
+    for(int i=0; i < numDevices; i++)
+    {
+        int addr = cables[cable].getUserDataByIndex(i);
+
+        if(addr < cableValues[cable].minAddress)
+          cableValues[cable].minAddress = addr;
+
+        if(addr > cableValues[cable].maxAddress)
+          cableValues[cable].maxAddress = addr;
+    }
+
+/*
+    Serial.print("Cable: ");
+    Serial.print(cable);
+    Serial.print("  Min Address: ");
+    Serial.print(cableValues[cable].minAddress);
+    Serial.print("  Max Address: ");
+    Serial.println(cableValues[cable].maxAddress);
+    */
   }
 }
 
-float CalculateMoisture(float rh, int temperature){
+double CalculateMoisture(float rh, int temperature){
   double A = 0;
   double B = 0;
   double C = 0;
@@ -125,16 +235,16 @@ float CalculateMoisture(float rh, int temperature){
   return mc;
 }
 
-uint8_t findDevices(int pin)
+uint8_t findDevices(int cable)
 {
 
   uint8_t address[16];
   uint8_t count = 0;
 
-  if (oneWire1.search(address))
+  if (wires[cable].search(address))
   {
     Serial.print("\nuint8_t pin");
-    Serial.print(pin, DEC);
+    Serial.print(cable, DEC);
     Serial.println("[][8] = {");
     do {
       count++;
@@ -148,7 +258,7 @@ uint8_t findDevices(int pin)
           Serial.print(", ");
       }
       Serial.println("  },");
-    } while (oneWire1.search(address));
+    } while (wires[cable].search(address));
 
     Serial.println("};");
     Serial.print("// nr devices found: ");

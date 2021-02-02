@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <RTCZero.h>
 
-class FilteredValues{
+struct FilteredValues{
 public:
   float filteredRPM = 0;
   float filteredSP = 0;
@@ -12,27 +12,24 @@ public:
   float filteredFanHumidity = 0;
 };
 
+struct BinSensor{
+public:
+  int address;
+  float temperature;
+  double moisture;
+  float humidity;
+};
+
 class CableValues
 {
 public:
-  float s1T = 0;
-  float s1M = 0;
-  float s2T = 0;
-  float s2M = 0;
-  float s3T = 0;
-  float s3M = 0;
-  float s4T = 0;
-  float s4M = 0;
-  float s5T = 0;
-  float s5M = 0;
-  float s6T = 0;
-  float s6M = 0;
-  float s7T = 0;
-  float s7M = 0;
-  float s8T = 0;
-  float s8M = 0;
+
   float avgT = 0;
   float avgM = 0;
+  int maxAddress = -1;
+  int minAddress = 65536;
+  int numSensors = 0;
+  BinSensor sensors[10];
 };
 
 enum EngineCommand{
@@ -68,9 +65,10 @@ extern float avgTemp;
 extern float maxMoisture;
 extern float minMoisture;
 extern float avgMoisture;
+extern int numCables;
 
 extern FilteredValues filteredValues;
-//extern CableValues cable1;
+extern CableValues cableValues[3];
 //extern CableValues cable2;
 //extern CableValues cable3;
 //extern int currentBatch;

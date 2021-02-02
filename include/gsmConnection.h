@@ -14,4 +14,4 @@ void RequestTimeStamp();
 void GetLocation();
 void onMessageReceived(int messageSize);
 void setRTCTime(DynamicJsonDocument doc);
-void print2digits(int number);
+String print2digits(int number);
