@@ -30,9 +30,10 @@ float minMoisture;
 float avgMoisture;
 int numCables = 0;
 bool timeSet = false;
+float batteryVoltage = 0;
 
-TimedAction collectSensorData = TimedAction(60000, CollectSensorData);
-TimedAction collectBinSensorData = TimedAction(60001, GetBinCableValues);
+TimedAction collectSensorData = TimedAction(300000, CollectSensorData);     //Get sensor data every 5 minutes
+TimedAction collectBinSensorData = TimedAction(900001, GetBinCableValues);   //Get the cable data every 15 minutes
 TimedAction engineTimer = TimedAction(60002, UpdateEngineTimer);
 TimedAction saveConfiguration = TimedAction(60003, SaveConfigFile);
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM

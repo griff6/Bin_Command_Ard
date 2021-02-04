@@ -267,7 +267,26 @@ void publishDataMessage() {
 
   for(int cable = 0; cable < numCables; cable++)
   {
-    delay(5000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
+    MQTT_Poll();
+    delay(1000);
 
     mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
     DynamicJsonDocument doc(capacity);
@@ -386,9 +405,10 @@ void updateLiveData() {
 
   StaticJsonDocument<capacity> doc;
 
-  doc["rpm"] = filteredValues.filteredRPM;
-  doc["sp"] = filteredValues.filteredSP;
-  doc["eh"] = config.engineTime;
+  doc["rpm"] = Round(filteredValues.filteredRPM);
+  doc["sp"] = Round(filteredValues.filteredSP);
+  doc["eh"] = Round(config.engineTime);
+  doc["bv"] = Round(batteryVoltage);
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();

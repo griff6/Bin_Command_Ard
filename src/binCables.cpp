@@ -98,8 +98,8 @@ void GetBinCableValues()
         if(moisture < minMoisture)
           minMoisture = moisture;
 
-      //  cableValues[cable].avgM += moisture;
-      //  cableValues[cable].avgT += temp;
+        cableValues[cable].avgM += moisture;
+        cableValues[cable].avgT += temp;
         //Serial.print("avgT: ");
         //Serial.println(cableValues[cable].avgT);
 /*
@@ -120,7 +120,8 @@ void GetBinCableValues()
         Serial.print(i);
         Serial.print(" is: ");
         Serial.println(cableValues[cable].sensors[index].moisture);
-*/
+        */
+
     }
     cableValues[cable].avgM = cableValues[cable].avgM / (numDevices);
     cableValues[cable].avgT = cableValues[cable].avgT / (numDevices);
@@ -145,7 +146,7 @@ void GetBinCableValues()
     avgMoisture = avgMoisture / numCables;
     avgTemp = avgTemp / numCables;
   }
-
+/*
   Serial.print(" Average Temperature is ");
   Serial.print(avgTemp);
   Serial.print(" Average Moisture is ");
@@ -159,6 +160,7 @@ void GetBinCableValues()
   Serial.print(" Min Moisture is ");
   Serial.print(minMoisture);
   Serial.println();
+  */
 
 }
 

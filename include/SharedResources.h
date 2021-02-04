@@ -77,6 +77,7 @@ extern int starterAttempt;
 extern bool updateEngineState;
 extern Config config;
 extern bool timeSet;
+extern float batteryVoltage;
 
 extern RTCZero rtc;
 extern bool hourlyData;
