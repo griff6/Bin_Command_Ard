@@ -8,6 +8,7 @@ String calculateClientId();
 String calculateJWT();
 void MQTT_Poll();
 void publishDataMessage();
+float Round(float var);
 void publishEngineState();
 void updateLiveData();
 void RequestTimeStamp();

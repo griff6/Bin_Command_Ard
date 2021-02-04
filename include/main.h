@@ -1,4 +1,4 @@
 #include <Arduino.h>
 
-//void SetRTC_Alarm();
-//void RTC_Alarm();
+void CollectSensorData();
+void UpdateEngineTimer();

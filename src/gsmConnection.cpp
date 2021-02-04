@@ -137,7 +137,8 @@ void connectMQTT() {
   mqttClient.subscribe("/devices/" + deviceId + "/config", 1);
   mqttClient.subscribe("/devices/" + deviceId + "/commands/#");
 
-  RequestTimeStamp();
+  if(!timeSet)
+    RequestTimeStamp();
 
   publishEngineState();
 
@@ -208,8 +209,6 @@ void publishDataMessage() {
     fanStatus = 1;
   }
 
-  // send message, the Print interface can be used to set the message contents
-  //mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
   Serial.println();
   Serial.println("Publishing message");
   mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
@@ -223,11 +222,6 @@ void publishDataMessage() {
   //DynamicJsonDocument doc(431);
   //size_t capacity = JSON_OBJECT_SIZE(78);
 
-  //if(numCables == 0)
-//    capacity = JSON_OBJECT_SIZE(20);
-//  else
-//    capacity = JSON_OBJECT_SIZE(20);
-
   String ts = "";
   ts = ts + print2digits(rtc.getYear());
   ts += "-";
@@ -240,98 +234,59 @@ void publishDataMessage() {
   ts += print2digits(rtc.getMinutes());
 
   //StaticJsonDocument<capacity> doc;
-  size_t capacity = JSON_OBJECT_SIZE(78);
+  //size_t capacity = JSON_OBJECT_SIZE(23);
+  size_t capacity = JSON_OBJECT_SIZE(66);
   DynamicJsonDocument doc(capacity);
 
   doc["ts"] = ts;
   doc["msg"] = 0;
-  doc["ap"] = filteredValues.filteredAirPressure;
-  doc["ah"] = filteredValues.filteredAirHumidity;
-  doc["at"] = filteredValues.filteredAirTemp;
+  doc["ap"] = Round(filteredValues.filteredAirPressure);
+  doc["ah"] = Round(filteredValues.filteredAirHumidity);
+  doc["at"] = Round(filteredValues.filteredAirTemp);
   doc["fs"] = fanStatus;
-  doc["fh"] = filteredValues.filteredFanHumidity;
-  doc["ft"] = filteredValues.filteredFanTemp;
-  doc["sp"] = filteredValues.filteredSP;//serialized(String(filteredValues.filteredSP,1));
-  doc["minT"] = 0;
-  doc["maxT"] = 0;
-  doc["avT"] = 0;
-  doc["minM"] = 0;
-  doc["maxM"] = 0;
-  doc["avM"] = 0;
+  doc["fh"] = Round(filteredValues.filteredFanHumidity);
+  doc["ft"] = Round(filteredValues.filteredFanTemp);
+  doc["sp"] = Round(filteredValues.filteredSP);//serialized(String(filteredValues.filteredSP,1));
+  doc["minT"] = Round(minTemp);
+  doc["maxT"] = Round(maxTemp);
+  doc["avT"] = Round(avgTemp);
+  doc["minM"] = Round(minMoisture);
+  doc["maxM"] = Round(maxMoisture);
+  doc["avM"] = Round(avgMoisture);
   doc["mode"] = fanMode;
   doc["bn"] = config.batchNumber;
-  doc["ber"] = config.batchEngineTime;
-  doc["bat"] = config.batchAerateTime;
-  doc["bdt"] = config.batchDryingTime;
+  doc["ber"] = Round(config.batchEngineTime);
+  doc["bat"] = Round(config.batchAerateTime);
+  doc["bdt"] = Round(config.batchDryingTime);
   doc["gn"] = config.grain;
-  doc["nc"] = numCables;
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
   serializeJsonPretty(doc, Serial);
   Serial.println();
 
-
-
   for(int cable = 0; cable < numCables; cable++)
   {
+    delay(5000);
+
+    mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
     DynamicJsonDocument doc(capacity);
 
     doc["ts"] = ts;
     doc["msg"] = cable+1;
 
-    if(cable == 0)
-      cableNum = "C0T";
-    else if(cable == 1)
-      cableNum = "C1T";
-    else if(cable == 2)
-      cableNum == "C2T";
-
-    JsonArray cableTemp = doc.createNestedArray(cableNum);
+    JsonArray cableTemp = doc.createNestedArray("ct");
 
     for(int i = 0; i < cableValues[cable].numSensors; i++)
     {
-      /*
-      if(cable == 0)
-        cableNum = "C0T";
-      else if(cable == 1)
-        cableNum = "C1T";
-      else if(cable == 2)
-        cableNum == "C2T";
-
-      cableNum += i;
-
-      doc[cableNum] = cableValues[cable].sensors[i].temperature;
-      */
-      cableTemp.add(cableValues[cable].sensors[i].temperature);
+      cableTemp.add(Round(cableValues[cable].sensors[i].temperature));
     }
 
-
-
-    if(cable == 0)
-      cableNum = "C0M";
-    else if(cable == 1)
-      cableNum = "C1M";
-    else if(cable == 2)
-      cableNum == "C2M";
-
-    JsonArray cableMois = doc.createNestedArray(cableNum);
+    JsonArray cableMois = doc.createNestedArray("mois");
 
     for(int i = 0; i < cableValues[cable].numSensors; i++)
     {
-      /*
-      if(cable == 0)
-        cableNum = "C0M";
-      else if(cable == 1)
-        cableNum = "C1M";
-      else if(cable == 2)
-        cableNum == "C2M";
-
-      cableNum += i;
-
-      doc[cableNum] = cableValues[cable].sensors[i].moisture;
-      */
-      cableMois.add(cableValues[cable].sensors[i].moisture);
+      cableMois.add(Round(cableValues[cable].sensors[i].moisture));
     }
 
     serializeJson(doc, mqttClient);
@@ -341,15 +296,18 @@ void publishDataMessage() {
   }
 
 
-
-//  Serial.print("Crop in publishDataMessage(): ");
-  //Serial.println(config.grain);
-
-  serializeJson(doc, mqttClient);
-  mqttClient.endMessage();
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
+  //serializeJson(doc, mqttClient);
+  //mqttClient.endMessage();
+  //serializeJsonPretty(doc, Serial);
+  //Serial.println();
   //Serial.println("Published Message.");
+}
+
+//round a number to one decimal place
+float Round(float var)
+{
+  float value = (int)(var * 10 + 0.5);
+  return (float)value/10;
 }
 
 void publishMaxMins() {
@@ -561,6 +519,7 @@ void setRTCTime(DynamicJsonDocument doc)
   //Serial.println(time);
 
   hourlyData = true;
+  timeSet = true;
   rtc.begin();
   rtc.setEpoch(time);
   SetRTC_Alarm();

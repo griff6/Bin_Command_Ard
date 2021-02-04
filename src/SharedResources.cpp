@@ -80,8 +80,6 @@ void InitiallizeSD()
 
       GetConfigFile();
 
-      grainType_Flash.write(config.grain);
-
       if(tempEngineTime < config.engineTime)
       {
         Serial.println("Using configuration file values");

@@ -69,9 +69,6 @@ extern int numCables;
 
 extern FilteredValues filteredValues;
 extern CableValues cableValues[3];
-//extern CableValues cable2;
-//extern CableValues cable3;
-//extern int currentBatch;
 extern EngineCommand userEngineCommand;
 extern EngineState engineState;
 extern FanMode fanMode;
@@ -79,6 +76,7 @@ extern bool startEngine;
 extern int starterAttempt;
 extern bool updateEngineState;
 extern Config config;
+extern bool timeSet;
 
 extern RTCZero rtc;
 extern bool hourlyData;

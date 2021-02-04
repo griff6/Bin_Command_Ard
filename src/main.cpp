@@ -9,8 +9,7 @@
 #include "manageConnections.h"
 #include "gsmConnection.h"
 #include "binCables.h"
-
-
+#include "TimedAction.h"
 
 FilteredValues filteredValues;
 Config config;
@@ -21,7 +20,6 @@ FanMode fanMode = DRY;
 bool startEngine = false;
 int starterAttempt = 500;
 bool updateEngineState = false;
-//int accState;
 bool hourlyData;
 RTCZero rtc;
 float maxTemp;
@@ -31,8 +29,12 @@ float maxMoisture;
 float minMoisture;
 float avgMoisture;
 int numCables = 0;
+bool timeSet = false;
 
-
+TimedAction collectSensorData = TimedAction(60000, CollectSensorData);
+TimedAction collectBinSensorData = TimedAction(60001, GetBinCableValues);
+TimedAction engineTimer = TimedAction(60002, UpdateEngineTimer);
+TimedAction saveConfiguration = TimedAction(60003, SaveConfigFile);
 long rpmCalcInterval = 1000;    //how often the program will calculate RPM
 long printInterval = 60000;//60000;   //how often the program will print the data out (60000 is 1 minute)
 long configSaveInterval = 60000;
@@ -72,7 +74,6 @@ void setup() {
   StartAM2315();
 
   SetupBinCables();
-  CableValues cableValues[numCables];
 
   lastEngineTime = millis();
 
@@ -83,27 +84,22 @@ void loop() {
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
-  //if(currentMillis - prevMqttCalc >= mqttInterval){
-    //MQTT_Poll();
-    MaintainConnections();
-  //  prevMqttCalc = currentMillis;
-  //}
+  MaintainConnections();
 
-  //if(firstLoop)
-  //{
-  //  RequestTimeStamp();
-  //}
+  collectSensorData.check();
+  collectBinSensorData.check();
+  engineTimer.check();
+  saveConfiguration.check();
 
   //Calculate a new RPM value
   if(diffRPMTime >= rpmCalcInterval)
   {
     Calculate_RPM(diffRPMTime);
-
     prevRPMCalc = currentMillis;
   }
 
-  //This is to collect the data and print it to the serial port
-  if(currentMillis - prevPrint >= printInterval || firstLoop == true)
+  //This is for debugging to get initial data for testing.
+  if(timeSet &&  firstLoop == true)
   {
     GetBinCableValues();
 
@@ -114,56 +110,50 @@ void loop() {
     GetFanData();
     //GetGSMLocation();
     Serial.print(".");
-    //HandleHourlyData();
 
-    prevPrint = currentMillis;
     firstLoop = false;
   }
 
   if(hourlyData){
     HandleHourlyData();
-    //Serial.println("RTC_Alarm Fired");
     SetRTC_Alarm();
     hourlyData = false;
   }
   EngineController();
+}
 
-  if(currentMillis - lastEngineTime >= engineTimerInterval){
+void CollectSensorData()
+{
+  Save_RPM();
 
-    if(engineState == RUNNING)
-    {
-    //  long temp = millis();
-      long tempTime = millis() - lastEngineTime;
-      float update = tempTime;
+  GetPressure();
+  PrintBME280Data();
+  GetFanData();
+  //GetGSMLocation();
+  Serial.print(".");
+}
 
-      updateTime = update / 3600000; //convert the time from ms to hours
-
-      Serial.print("   updateTime: ");
-      Serial.println(updateTime);
-
-      config.engineTime += updateTime;
-      config.batchEngineTime += updateTime;
-
-      if(fanMode == AERATE)
-      {
-        config.batchAerateTime += updateTime;
-      }if(fanMode == DRY){
-        config.batchDryingTime += updateTime;
-      }
-    }
-    //Serial.print("Engine Time: ");
-    //Serial.println(config.engineTime);
-
-    lastEngineTime = millis();
-  }
-
-//Save the configuration file
-  if(currentMillis - prevConfigSave >= configSaveInterval)
+void UpdateEngineTimer()
+{
+  if(engineState == RUNNING)
   {
-    SaveConfigFile();
-    prevConfigSave = currentMillis;
+  //  long temp = millis();
+    long tempTime = millis() - lastEngineTime;
+    float update = tempTime;
+
+    updateTime = update / 3600000; //convert the time from ms to hours
+
+    Serial.print("   updateTime: ");
+    Serial.println(updateTime);
+
+    config.engineTime += updateTime;
+    config.batchEngineTime += updateTime;
+
+    if(fanMode == AERATE)
+    {
+      config.batchAerateTime += updateTime;
+    }if(fanMode == DRY){
+      config.batchDryingTime += updateTime;
+    }
   }
-
-
-
 }
