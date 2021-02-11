@@ -92,3 +92,4 @@ void InitiallizeSD();
 void GetConfigFile();
 void SaveConfigFile();
 void StartNewBatch(const char *grainName);
+void GetBatteryVoltage();

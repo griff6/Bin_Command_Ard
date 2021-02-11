@@ -4,10 +4,14 @@
 #include <ArduinoMqttClient.h>
 #include <Arduino_JSON.h>
 #include "arduino_secrets.h"
-#include <MKRGSM.h>
 #include <ArduinoJson.h>
 #include "SharedResources.h"
 #include "Engine_Control.h"
+#include "RPM_Sensor.h"
+#include "Bin_Pressure_Sensor.h"
+
+//#include <MKRGSM.h>
+#include <WiFiNINA.h>
 
 /////// Enter your sensitive data in arduino_secrets.h
 const char pinnumber[]     = SECRET_PINNUMBER;
@@ -21,13 +25,20 @@ const char registryId[]    = SECRET_REGISTRY_ID;
 const String deviceId      = SECRET_DEVICE_ID;
 const String projID       = SECRET_PROJECT_ID;
 
+char ssid[] = SECRET_SSID;        // your network SSID (name)
+char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
+int status = WL_IDLE_STATUS;     // the Wifi radio's status
+
 const char broker[]        = "mqtt.googleapis.com";
 
-GSM gsmAccess;
-GPRS gprs;
-GSMSSLClient  gsmSslClient;
-GSMLocation location;
-MqttClient    mqttClient(gsmSslClient);
+//GSM gsmAccess;
+//GPRS gprs;
+//GSMSSLClient  gsmSslClient;
+//GSMLocation location;
+//MqttClient    mqttClient(gsmSslClient);
+
+WiFiSSLClient sslClient;
+MqttClient mqttClient(sslClient);
 
 //RTCZero rtc;
 bool locationSet = false;
@@ -59,9 +70,41 @@ void initiallizeMQTT()
 
 unsigned long getTime() {
   // get the current time from the cellular module
-  return gsmAccess.getTime();
+//  return gsmAccess.getTime();
+
+  return WiFi.getTime();
 }
 
+//This is a dummy for the wifi
+bool connectGSM()
+{
+  // Check for the WiFi module
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("Communication with WiFi module failed!");
+    // don't continue
+    while (true);
+  }
+
+  Serial.print("WiFi firmware version ");
+  Serial.println(WiFi.firmwareVersion());
+
+  Serial.print("Attempting to connect to SSID: ");
+  Serial.print(SECRET_SSID);
+  Serial.print(" ");
+
+  while (WiFi.begin(SECRET_SSID, SECRET_PASS) != WL_CONNECTED) {
+    // failed, retry
+    Serial.print(".");
+    delay(3000);
+  }
+
+  Serial.println("Connected to WiFi");
+  printWiFiStatus();
+  return true;
+}
+
+/*
+//This is actually for the GSM
 bool connectGSM() {
   bool gsmConnected = false;
   int counter = 0;
@@ -99,6 +142,7 @@ bool connectGSM() {
 
   return gsmConnected;
 }
+*/
 
 void connectMQTT() {
   if (mqttClient.connected()) {
@@ -186,9 +230,7 @@ String calculateJWT() {
 
 void MQTT_Poll()
 {
-  if (gsmAccess.status() != GSM_READY || gprs.status() != GPRS_READY) {
-    connectGSM();
-  }
+  CheckConnection();
 
   if (!mqttClient.connected()) {
     // MQTT client is disconnected, connect
@@ -197,6 +239,13 @@ void MQTT_Poll()
   }
 
   mqttClient.poll();
+}
+
+void CheckConnection()
+{
+  //if (gsmAccess.status() != GSM_READY || gprs.status() != GPRS_READY) {
+  //  connectGSM();
+  //}
 }
 
 void publishDataMessage() {
@@ -399,13 +448,16 @@ void updateLiveData() {
   Serial.println("Publishing live data");
   mqttClient.beginMessage("/devices/" + deviceId + "/events/LIVE_DATA");
 
-  const size_t capacity = JSON_OBJECT_SIZE(3);
+  const size_t capacity = JSON_OBJECT_SIZE(4);
   //DynamicJsonDocument doc(capacity);
   //DynamicJsonDocument doc(431);
 
   StaticJsonDocument<capacity> doc;
 
-  doc["rpm"] = Round(filteredValues.filteredRPM);
+  GetPressure();
+  GetBatteryVoltage();
+
+  doc["rpm"] = Round(GetRPM());//Round(filteredValues.filteredRPM);
   doc["sp"] = Round(filteredValues.filteredSP);
   doc["eh"] = Round(config.engineTime);
   doc["bv"] = Round(batteryVoltage);
@@ -427,6 +479,7 @@ void RequestTimeStamp() {
   Serial.println("Requested TimeStamp.");
 }
 
+/*
 void GetLocation()
 {
   if (!locationSet && location.available() && location.longitude() != -95.00) {
@@ -466,6 +519,7 @@ void GetLocation()
     Serial.println();
   }
 }
+*/
 
 void onMessageReceived(int messageSize) {
   String rcvMsg;
@@ -567,4 +621,11 @@ String print2digits(int number) {
   }
   //Serial.print(number);
   return ret;
+}
+
+void printWiFiStatus() {
+  // print your WiFi IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
 }

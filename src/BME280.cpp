@@ -69,12 +69,12 @@ void PrintBME280Data()
   filterValue(hum, filteredValues.filteredAirHumidity, bmp_fc);
 
   //Serial.print("Ambient Temperature: ");
-  //Serial.println(filteredValues.filteredAirTemp);
+  //Serial.println(temp);
   //Serial.println(filteredAmbientT);
   //Serial.print("Ambient Humidity: ");
- // Serial.println(filteredAmbientH);
- //Serial.println(filteredValues.filteredAirHumidity);
-  //Serial.print("Air Pressure: ");
+  //Serial.println(filteredAmbientH);
+  //Serial.println(hum);
+  ///Serial.print("Air Pressure: ");
   //Serial.println(filteredAirPressure);
-  //Serial.println(filteredValues.filteredAirPressure);
+  //Serial.println(pres);
 }

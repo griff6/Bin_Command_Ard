@@ -104,10 +104,12 @@ void loop() {
   {
     GetBinCableValues();
 
+    GetBatteryVoltage();
+
     Save_RPM();
 
     GetPressure();
-    PrintBME280Data();
+//    PrintBME280Data();
     GetFanData();
     //GetGSMLocation();
     Serial.print(".");
@@ -130,6 +132,9 @@ void CollectSensorData()
   GetPressure();
   PrintBME280Data();
   GetFanData();
+
+  GetBatteryVoltage();
+
   //GetGSMLocation();
   Serial.print(".");
 }

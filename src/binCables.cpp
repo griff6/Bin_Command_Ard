@@ -5,7 +5,7 @@
 #include <Math.h>
 
 // Setup a oneWire instance to communicate with any OneWire devices
-OneWire wires[3] = {OneWire(3), OneWire(4), OneWire(5)};
+OneWire wires[3] = {OneWire(4), OneWire(7), OneWire(6)};
 //OneWire oneWire1(3);  //Cable 1 is connected to pin 3
 //OneWire oneWire2(4);  //Cable 2 is connected to pin 4
 //OneWire oneWire3(5);  //Cable 3 is connected to pin 5
@@ -102,7 +102,7 @@ void GetBinCableValues()
         cableValues[cable].avgT += temp;
         //Serial.print("avgT: ");
         //Serial.println(cableValues[cable].avgT);
-/*
+
         Serial.print("Address: ");
         Serial.print(cableValues[cable].sensors[index].address);
         Serial.print(",   ");
@@ -120,7 +120,7 @@ void GetBinCableValues()
         Serial.print(i);
         Serial.print(" is: ");
         Serial.println(cableValues[cable].sensors[index].moisture);
-        */
+
 
     }
     cableValues[cable].avgM = cableValues[cable].avgM / (numDevices);
@@ -132,13 +132,14 @@ void GetBinCableValues()
       avgTemp += cableValues[cable].avgT;
     }
 
-    Serial.print("Cable ");
+  /*  Serial.print("Cable ");
     Serial.print(cable);
     Serial.print(" Average Temperature is ");
     Serial.print(cableValues[cable].avgT);
     Serial.print(" Average Moisture is ");
     Serial.print(cableValues[cable].avgM);
     Serial.println();
+    */
 
   }
 

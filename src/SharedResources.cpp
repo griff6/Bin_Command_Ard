@@ -5,12 +5,16 @@
 #include <ArduinoJson.h>
 #include "gsmConnection.h"
 
+/*
 FlashStorage(grainType_Flash, String);
 FlashStorage(engineTime_Flash, float);
 FlashStorage(batchEngineTime_Flash, float);
 FlashStorage(batchDryingTime_Flash, float);
 FlashStorage(batchAerationTime_Flash, float);
 FlashStorage(batchNumber_Flash, int);
+*/
+
+FlashStorage(config_flash, Config);
 
 const char *configFileName = "config.txt";
 
@@ -53,7 +57,7 @@ void InitiallizeSD()
 {
   Serial.print("Initializing SD card...");
 
-  float tempEngineTime = engineTime_Flash.read();
+  //float tempEngineTime = engineTime_Flash.read();
 
   if (!SD.begin(0)) {
     Serial.println("Could not initiallize SD card");
@@ -67,36 +71,28 @@ void InitiallizeSD()
       File file = SD.open(configFileName, FILE_WRITE);
       file.close();
 
-      config.engineTime = tempEngineTime;
-      config.batchEngineTime = batchEngineTime_Flash.read();
-      config.batchDryingTime = batchDryingTime_Flash.read();
-      config.batchAerateTime = batchAerationTime_Flash.read();
-      config.batchNumber = batchNumber_Flash.read();
-      grainType_Flash.read().toCharArray(config.grain, sizeof(config.grain));
+      config = config_flash.read();
 
       SaveConfigFile();
 
     }else{
 
       GetConfigFile();
+      Config tempConfig = config_flash.read();
 
-      if(tempEngineTime < config.engineTime)
+      if(tempConfig.engineTime <= config.engineTime)
       {
         Serial.println("Using configuration file values");
-        engineTime_Flash.write(config.engineTime);
-        batchEngineTime_Flash.write(config.batchEngineTime);
-        batchDryingTime_Flash.write(config.batchDryingTime);
-        batchAerationTime_Flash.write(config.batchAerateTime);
-        batchNumber_Flash.write(config.batchNumber);
-        grainType_Flash.write(config.grain);
+
+        config_flash.write(config);
       }else{
         Serial.println("Using flash memory configuration values");
-        config.engineTime = tempEngineTime;
-        config.batchEngineTime = batchEngineTime_Flash.read();
-        config.batchDryingTime = batchDryingTime_Flash.read();
-        config.batchAerateTime = batchAerationTime_Flash.read();
-        config.batchNumber = batchNumber_Flash.read();
-        grainType_Flash.read().toCharArray(config.grain, sizeof(config.grain));
+
+        config.engineTime = tempConfig.engineTime;
+        config.batchAerateTime = tempConfig.batchAerateTime;
+        config.batchDryingTime = tempConfig.batchDryingTime;
+        config.batchNumber = tempConfig.batchNumber;
+        memcpy(config.grain, tempConfig.grain, sizeof(tempConfig.grain));
       }
     }
   }
@@ -114,13 +110,15 @@ void GetConfigFile()
   if(error)
     Serial.print("Failed to read from the configuration file");
 
-  strlcpy(config.grain, doc["grain"] | "", sizeof(config.grain));
+  strlcpy(config.grain, doc["grain"], sizeof(config.grain));
   config.batchNumber = doc["batchNumber"];
   config.engineTime = doc["engineTime"];
   config.batchEngineTime = doc["batchEngineTime"];
   config.batchDryingTime = doc["batchDryingTime"];
   config.batchAerateTime = doc["batchAerateTime"];
 
+  Serial.print("Grain in GetConfigFile: ");
+  Serial.println(config.grain);
   //serializeJsonPretty(doc, Serial);
   //Serial.println();
 
@@ -158,12 +156,7 @@ void SaveConfigFile()
 
   file.close();
 
-  engineTime_Flash.write(config.engineTime);
-  batchEngineTime_Flash.write(config.batchEngineTime);
-  batchDryingTime_Flash.write(config.batchDryingTime);
-  batchAerationTime_Flash.write(config.batchAerateTime);
-  batchNumber_Flash.write(config.batchNumber);
-  grainType_Flash.write(config.grain);
+  config_flash.write(config);
 }
 
 void StartNewBatch(const char *grainName)
@@ -174,14 +167,17 @@ void StartNewBatch(const char *grainName)
   config.batchDryingTime = 0;
   config.batchAerateTime = 0;
 
-  engineTime_Flash.write(config.engineTime);
-  batchEngineTime_Flash.write(config.batchEngineTime);
-  batchDryingTime_Flash.write(config.batchDryingTime);
-  batchAerationTime_Flash.write(config.batchAerateTime);
-  batchNumber_Flash.write(config.batchNumber);
-  grainType_Flash.write(config.grain);
+  config_flash.write(config);
 
   SaveConfigFile();
 
   publishDataMessage();
+}
+
+void GetBatteryVoltage()
+{
+  //get the battery voltage
+  analogReadResolution(12);
+  batteryVoltage = analogRead(A3) * (3.3 / 4096);
+  batteryVoltage = 10.652 * pow(batteryVoltage,2)-29.608 * batteryVoltage + 27.713;
 }

@@ -8,4 +8,9 @@
 #define SECRET_PROJECT_ID   "bin-command-2"
 #define SECRET_CLOUD_REGION "us-central1"
 #define SECRET_REGISTRY_ID  "Registry_1"
-#define SECRET_DEVICE_ID    "F50A0001"
+#define SECRET_DEVICE_ID    "R9W0A0002"
+
+
+//wifi settings
+#define SECRET_SSID "SASKTEL0953"
+#define SECRET_PASS "d774234d93"
