@@ -2,8 +2,8 @@
 #include "SharedResources.h"
 
 
-#define START_PIN 2     //Pin for the start output relay
-#define ACC_PIN 1       //Pin for the Accessories relay
+#define START_PIN 3     //Pin for the start output relay
+#define ACC_PIN 2       //Pin for the Accessories relay
 
 const int STARTER_TIME = 1250;      //time to run the starter in ms
 unsigned long engineStartInterval = 10000;  //delay between attempts to start engine
@@ -18,12 +18,12 @@ void EngineController()
   //Serial.print("   engineState: ");
   //Serial.println(engineState);
 
-  if(filteredValues.filteredRPM > 100 && engineState != RUNNING)
-  {
-    engineState = RUNNING;
-    updateEngineState = true;
-    startEngine = false;
-  }//else if(filteredValues.filteredRPM < 100 && engineState != STOPPED && startEngine == false)
+//  if(filteredValues.filteredRPM > 100 && engineState != RUNNING)
+//  {
+//    engineState = RUNNING;
+//    updateEngineState = true;
+//    startEngine = false;
+//  }//else if(filteredValues.filteredRPM < 100 && engineState != STOPPED && startEngine == false)
   //{
   //  engineState = STOPPED;
   //  updateEngineState = true;
@@ -75,7 +75,7 @@ void EngineStartSequence()
   } else
   {
     //Serial.println("Failed to start engine");
-
+    digitalWrite(ACC_PIN, LOW);
     startEngine = false;
     starterAttempt = 500;
     engineState = FAILED_START;

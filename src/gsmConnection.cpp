@@ -9,6 +9,7 @@
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
 #include "Bin_Pressure_Sensor.h"
+#include "sdOperations.h"
 
 //#include <MKRGSM.h>
 #include <WiFiNINA.h>
@@ -181,7 +182,7 @@ void connectMQTT() {
   mqttClient.subscribe("/devices/" + deviceId + "/config", 1);
   mqttClient.subscribe("/devices/" + deviceId + "/commands/#");
 
-  if(!timeSet)
+  if(!timeIsSet)
     RequestTimeStamp();
 
   publishEngineState();
@@ -308,11 +309,14 @@ void publishDataMessage() {
   doc["bat"] = Round(config.batchAerateTime);
   doc["bdt"] = Round(config.batchDryingTime);
   doc["gn"] = config.grain;
+  doc["timestamp"] = rtc.getEpoch();
+  doc["batchStart"] = config.batchStartTime;
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
+  SaveDataRecord(doc);
+  //serializeJsonPretty(doc, Serial);
+  //Serial.println();
 
   for(int cable = 0; cable < numCables; cable++)
   {
@@ -358,6 +362,7 @@ void publishDataMessage() {
     }
 
     serializeJson(doc, mqttClient);
+    SaveDataRecord(doc);
     mqttClient.endMessage();
     serializeJsonPretty(doc, Serial);
     Serial.println();
@@ -448,7 +453,7 @@ void updateLiveData() {
   Serial.println("Publishing live data");
   mqttClient.beginMessage("/devices/" + deviceId + "/events/LIVE_DATA");
 
-  const size_t capacity = JSON_OBJECT_SIZE(4);
+  const size_t capacity = JSON_OBJECT_SIZE(6);
   //DynamicJsonDocument doc(capacity);
   //DynamicJsonDocument doc(431);
 
@@ -461,6 +466,8 @@ void updateLiveData() {
   doc["sp"] = Round(filteredValues.filteredSP);
   doc["eh"] = Round(config.engineTime);
   doc["bv"] = Round(batteryVoltage);
+  doc["pt"] = Round(filteredValues.filteredFanTemp);
+  doc["ph"] = Round(filteredValues.filteredFanHumidity);
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();
@@ -593,7 +600,7 @@ void setRTCTime(DynamicJsonDocument doc)
   //Serial.println(time);
 
   hourlyData = true;
-  timeSet = true;
+  timeIsSet = true;
   rtc.begin();
   rtc.setEpoch(time);
   SetRTC_Alarm();

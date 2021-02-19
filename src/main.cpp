@@ -10,6 +10,7 @@
 #include "gsmConnection.h"
 #include "binCables.h"
 #include "TimedAction.h"
+#include "sdOperations.h"
 
 FilteredValues filteredValues;
 Config config;
@@ -29,7 +30,7 @@ float maxMoisture;
 float minMoisture;
 float avgMoisture;
 int numCables = 0;
-bool timeSet = false;
+bool timeIsSet = false;
 float batteryVoltage = 0;
 
 TimedAction collectSensorData = TimedAction(300000, CollectSensorData);     //Get sensor data every 5 minutes
@@ -100,7 +101,7 @@ void loop() {
   }
 
   //This is for debugging to get initial data for testing.
-  if(timeSet &&  firstLoop == true)
+  if(timeIsSet &&  firstLoop == true)
   {
     GetBinCableValues();
 
@@ -109,7 +110,7 @@ void loop() {
     Save_RPM();
 
     GetPressure();
-//    PrintBME280Data();
+    PrintBME280Data();
     GetFanData();
     //GetGSMLocation();
     Serial.print(".");

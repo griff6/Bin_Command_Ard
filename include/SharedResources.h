@@ -57,6 +57,7 @@ struct Config{
   float batchEngineTime;
   float batchDryingTime;
   float batchAerateTime;
+  unsigned long batchStartTime;
 };
 
 extern float maxTemp;
@@ -76,11 +77,13 @@ extern bool startEngine;
 extern int starterAttempt;
 extern bool updateEngineState;
 extern Config config;
-extern bool timeSet;
+extern bool timeIsSet;
 extern float batteryVoltage;
 
 extern RTCZero rtc;
 extern bool hourlyData;
+
+
 
 void filterValue(float newReading, float &filtValue, float fc);
 void SetRTC_Time(uint32_t unixTime);
@@ -88,8 +91,7 @@ void SetRTC_Alarm();
 void RTC_Alarm();
 void SetEngineTimerAlarm();
 void EngineTimerAlarm();
-void InitiallizeSD();
-void GetConfigFile();
-void SaveConfigFile();
 void StartNewBatch(const char *grainName);
 void GetBatteryVoltage();
+Config GetFlashConfiguration();
+void SaveFlashConfiguration();

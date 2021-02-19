@@ -33,7 +33,7 @@ void GetFanData()
   filterValue(humidity, filteredValues.filteredFanHumidity, fan_fc);
 
   //Serial.print("Fan Temperature: ");
-//  Serial.println(filteredValues.filteredFanTemp);
+  //Serial.println(temperature);
   //Serial.print("Fan Humidity: ");
-  //Serial.println(filteredValues.filteredFanHumidity);
+  //Serial.println(humidity);
 }

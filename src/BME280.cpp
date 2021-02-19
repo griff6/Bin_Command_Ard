@@ -7,6 +7,7 @@
 BMx280I2C bmx280(I2C_ADDRESS);
 
 float bmp_fc = .75;//.2;            // higher value puts less filtering
+bool bmxInitiallized = false;
 
 void SetupBME280()
 {
@@ -15,6 +16,7 @@ void SetupBME280()
   if (!bmx280.begin())
   {
     Serial.println("begin() failed. check your BMx280 Interface and I2C Address.");
+    return;
     //while (1);
   }
 
@@ -35,6 +37,8 @@ void SetupBME280()
   //if sensor is a BME280, set an oversampling setting for humidity measurements.
   if (bmx280.isBME280())
     bmx280.writeOversamplingHumidity(BMx280MI::OSRS_H_x16);
+
+  bmxInitiallized = true;
 }
 
 void PrintBME280Data()
@@ -42,9 +46,9 @@ void PrintBME280Data()
   float temp (NAN), pres (NAN), hum (NAN);
 
   //start a measurement
-  if (!bmx280.measure())
+  if (!bmxInitiallized || !bmx280.measure())
   {
-    Serial.println("could not start measurement, is a measurement already running?");
+    Serial.println("BME Sensor is not running");
     return;
   }
 
@@ -67,14 +71,15 @@ void PrintBME280Data()
   filterValue(pres, filteredValues.filteredAirPressure, bmp_fc);
   filterValue(temp, filteredValues.filteredAirTemp, bmp_fc);
   filterValue(hum, filteredValues.filteredAirHumidity, bmp_fc);
-
-  //Serial.print("Ambient Temperature: ");
-  //Serial.println(temp);
+/*
+  Serial.print("Ambient Temperature: ");
+  Serial.println(temp);
   //Serial.println(filteredAmbientT);
-  //Serial.print("Ambient Humidity: ");
+  Serial.print("Ambient Humidity: ");
   //Serial.println(filteredAmbientH);
-  //Serial.println(hum);
-  ///Serial.print("Air Pressure: ");
+  Serial.println(hum);
+  Serial.print("Air Pressure: ");
   //Serial.println(filteredAirPressure);
-  //Serial.println(pres);
+  Serial.println(pres);
+  */
 }
