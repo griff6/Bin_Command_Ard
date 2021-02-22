@@ -1,4 +1,4 @@
-#include "gsmConnection.h"
+#include "wirelessConnection.h"
 #include <ArduinoECCX08.h>
 #include <utility/ECCX08JWS.h>
 #include <ArduinoMqttClient.h>
@@ -32,58 +32,73 @@ int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 const char broker[]        = "mqtt.googleapis.com";
 
-//GSM gsmAccess;
-//GPRS gprs;
-//GSMSSLClient  gsmSslClient;
-//GSMLocation location;
-//MqttClient    mqttClient(gsmSslClient);
-
 WiFiSSLClient sslClient;
 MqttClient mqttClient(sslClient);
 
-//RTCZero rtc;
 bool locationSet = false;
+bool wirelessConnected = false;
+unsigned long wirelessInterval = 3600000;   //1 hour
+unsigned long lastWirelessAttempt = 0;
 
-/*
-GSMUDP Udp;
-unsigned int localPort = 2390;      // local port to listen for UDP packets
-IPAddress timeServer(129, 6, 15, 28); // time.nist.gov NTP server
-const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
-byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
-*/
-
-void initiallizeMQTT()
+void ConnectWirelessNetwork()
 {
-    if (!ECCX08.begin()) {
-    Serial.println("No ECCX08 present!");
-    while (1);
-  }
+  wirelessConnected = connectWifi();
+  //wirelessConnected = connectGSM();
 
-  // Calculate and set the client id used for MQTT
-  String clientId = calculateClientId();
-
-  mqttClient.setId(clientId);
-
-  // Set the message callback, this function is
-  // called when the MQTTClient receives a message
-  mqttClient.onMessage(onMessageReceived);
+  //if(wirelessConnected)
+  //  initiallizeMQTT();
 }
 
-unsigned long getTime() {
-  // get the current time from the cellular module
-//  return gsmAccess.getTime();
+//Check if the wireless connection is established
+bool WirelessConnected()
+{
+  if(WiFi.status() == WL_CONNECTED){
+    return true;
+  }
 
-  return WiFi.getTime();
+  //if (gsmAccess.status() == GSM_READY || gprs.status() == GPRS_READY) {
+  //  return true;
+  //}
+
+  return false;
+}
+
+void MaintainConnections()
+{
+  //If connection has been lost, keep trying to reconnect every hour
+  if(!!WirelessConnected() && lastWirelessAttempt < millis())
+  {
+    ConnectWirelessNetwork();
+    lastWirelessAttempt = millis() + wirelessInterval;
+  }
+
+  if(wirelessConnected){
+    //Serial.println(".");
+    MQTT_Poll();
+    //RequestTimeStamp();
+  //  GetLocation();
+    if(updateEngineState)
+    {
+      publishEngineState();
+    }
+  }
 }
 
 //This is a dummy for the wifi
-bool connectGSM()
+bool connectWifi()
 {
+  int connectAttempts = 0;
+
+  if(WiFi.status() == WL_CONNECTED){
+    return true;
+  }
+
   // Check for the WiFi module
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
     // don't continue
-    while (true);
+    //while (true);
+    return false;
   }
 
   Serial.print("WiFi firmware version ");
@@ -94,13 +109,24 @@ bool connectGSM()
   Serial.print(" ");
 
   while (WiFi.begin(SECRET_SSID, SECRET_PASS) != WL_CONNECTED) {
-    // failed, retry
+    // spend 15 seconds trying to connect and then give up
+    if(connectAttempts > 5)
+    {
+      Serial.println("Could not connect to the wifi");
+      return false;
+    }
+
+    connectAttempts++;
+
     Serial.print(".");
     delay(3000);
   }
 
   Serial.println("Connected to WiFi");
   printWiFiStatus();
+
+  initiallizeMQTT();
+
   return true;
 }
 
@@ -122,6 +148,13 @@ bool connectGSM() {
     Serial.println("Failed Connection Attempt");
     counter++;
     //gsmConnected = false;
+
+    if(counter > 30)
+    {
+      return false;
+    }
+    counter++;
+
     delay(1000);
   }
 
@@ -140,10 +173,35 @@ bool connectGSM() {
     Serial.println("You're connected to the cellular network");
     Serial.println();
 
+  initiallizeMQTT();
 
   return gsmConnected;
 }
 */
+
+
+void initiallizeMQTT()
+{
+    if (!ECCX08.begin()) {
+    Serial.println("No ECCX08 present!");
+    while (1);
+  }
+
+  // Calculate and set the client id used for MQTT
+  String clientId = calculateClientId();
+
+  mqttClient.setId(clientId);
+
+  // Set the message callback, this function is
+  // called when the MQTTClient receives a message
+  mqttClient.onMessage(onMessageReceived);
+}
+
+unsigned long getTime() {
+  // get the current time from the cellular module
+//  return gsmAccess.getTime();
+  return WiFi.getTime();
+}
 
 void connectMQTT() {
   if (mqttClient.connected()) {
@@ -251,6 +309,10 @@ void CheckConnection()
 
 void publishDataMessage() {
 
+  if(!wirelessConnected){
+    return;
+  }
+
   int fanStatus = 0;
   String cableNum = "C0";
 
@@ -297,12 +359,12 @@ void publishDataMessage() {
   doc["fh"] = Round(filteredValues.filteredFanHumidity);
   doc["ft"] = Round(filteredValues.filteredFanTemp);
   doc["sp"] = Round(filteredValues.filteredSP);//serialized(String(filteredValues.filteredSP,1));
-  doc["minT"] = Round(minTemp);
-  doc["maxT"] = Round(maxTemp);
-  doc["avT"] = Round(avgTemp);
-  doc["minM"] = Round(minMoisture);
-  doc["maxM"] = Round(maxMoisture);
-  doc["avM"] = Round(avgMoisture);
+  doc["minT"] = Round(minGrainTemp);
+  doc["maxT"] = Round(maxGrainTemp);
+  doc["avT"] = Round(avgGrainTemp);
+  doc["minM"] = Round(minGrainMoisture);
+  doc["maxM"] = Round(maxGrainMoisture);
+  doc["avM"] = Round(avgGrainMoisture);
   doc["mode"] = fanMode;
   doc["bn"] = config.batchNumber;
   doc["ber"] = Round(config.batchEngineTime);
@@ -383,43 +445,15 @@ float Round(float var)
   return (float)value/10;
 }
 
-void publishMaxMins() {
-  // send message, the Print interface can be used to set the message contents
-  mqttClient.beginMessage("/devices/" + deviceId + "/events/MAX_MIN");
-  //mqttClient.beginMessage("/devices/" + deviceId + "/state");
-
-  const size_t capacity = JSON_OBJECT_SIZE(10);
-  StaticJsonDocument<capacity> doc;
-
-  //doc["rpm"] = filteredValues.filteredRPM;
-  doc["staticPressure"] = filteredValues.filteredSP;
-  //doc["engineHours"] = filteredValues.engineTime;
-
-  doc["ambient_temperature"] = filteredValues.filteredAirTemp;
-  doc["ambient_humidity"] = filteredValues.filteredAirHumidity;
-  doc["ambient_airPressure"] = filteredValues.filteredAirPressure;
-
-  doc["fan_temperature"] = filteredValues.filteredFanTemp;
-  doc["fan_humidity"] = filteredValues.filteredFanHumidity;
-  doc["grain"] = "dummyGrain";
-  doc["fanStatus"] = "OFF";
-
-  doc["grain_temperature"] = 0;
-  doc["grain_moisture"] = 0;
-  //doc["dummy"] = -1;
-
-  //serializeJson(doc, Serial);
-
-  //mqttClient.print("hello ");
-  serializeJson(doc, mqttClient);
-  //mqttClient.print(millis());
-  mqttClient.endMessage();
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
-  Serial.println("Published Message.");
-}
-
 void publishEngineState() {
+
+  //if(lastEngineUpdate == engineState)
+  //{
+//    return;
+//  }
+
+if(!WirelessConnected())
+  return;
 
   Serial.println();
   Serial.println("Publishing engine state");
@@ -431,11 +465,6 @@ void publishEngineState() {
 
   StaticJsonDocument<capacity> doc;
 
-  //if(engineState == STOPPED || engineState == STARTING)
-    //doc["fs"] = 1;
-  //else if(engineState == RUNNING)
-    //doc["fs"] = 0;
-
   doc["fs"] = engineState;
 
 
@@ -443,6 +472,8 @@ void publishEngineState() {
   mqttClient.endMessage();
   serializeJsonPretty(doc, Serial);
   Serial.println();
+
+//  lastEngineUpdate = engineState;
 
   updateEngineState = false;
 }

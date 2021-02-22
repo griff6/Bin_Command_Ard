@@ -6,8 +6,7 @@
 #include "Bin_Pressure_Sensor.h"
 #include "Engine_Control.h"
 #include "RPM_Sensor.h"
-#include "manageConnections.h"
-#include "gsmConnection.h"
+#include "wirelessConnection.h"
 #include "binCables.h"
 #include "TimedAction.h"
 #include "sdOperations.h"
@@ -23,15 +22,16 @@ int starterAttempt = 500;
 bool updateEngineState = false;
 bool hourlyData;
 RTCZero rtc;
-float maxTemp;
-float minTemp;
-float avgTemp;
-float maxMoisture;
-float minMoisture;
-float avgMoisture;
+float maxGrainTemp;
+float minGrainTemp;
+float avgGrainTemp;
+float maxGrainMoisture;
+float minGrainMoisture;
+float avgGrainMoisture;
 int numCables = 0;
 bool timeIsSet = false;
 float batteryVoltage = 0;
+float minDryingTemperature = -10;
 
 TimedAction collectSensorData = TimedAction(300000, CollectSensorData);     //Get sensor data every 5 minutes
 TimedAction collectBinSensorData = TimedAction(900001, GetBinCableValues);   //Get the cable data every 15 minutes
@@ -65,7 +65,8 @@ void setup() {
 
   Wire.begin();
 
-  InitiallizeConnections();
+  //InitiallizeConnections();
+  ConnectWirelessNetwork();
 
   SetupRPMSensor();
   SetupPressure();
@@ -119,7 +120,8 @@ void loop() {
   }
 
   if(hourlyData){
-    HandleHourlyData();
+    //HandleHourlyData();
+    publishDataMessage();
     SetRTC_Alarm();
     hourlyData = false;
   }

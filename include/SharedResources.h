@@ -42,6 +42,8 @@ enum EngineState{
   STOPPED,
   STARTING,
   RUNNING,
+  WARMUP,
+  COOLDOWN,
   FAILED_START,
 };
 
@@ -58,14 +60,17 @@ struct Config{
   float batchDryingTime;
   float batchAerateTime;
   unsigned long batchStartTime;
+  float minDryingTemperature;
+  float targetMoisture;
+  float targetTemperature;
 };
 
-extern float maxTemp;
-extern float minTemp;
-extern float avgTemp;
-extern float maxMoisture;
-extern float minMoisture;
-extern float avgMoisture;
+extern float maxGrainTemp;
+extern float minGrainTemp;
+extern float avgGrainTemp;
+extern float maxGrainMoisture;
+extern float minGrainMoisture;
+extern float avgGrainMoisture;
 extern int numCables;
 
 extern FilteredValues filteredValues;
@@ -79,6 +84,7 @@ extern bool updateEngineState;
 extern Config config;
 extern bool timeIsSet;
 extern float batteryVoltage;
+extern float minDryingTemperature;
 
 extern RTCZero rtc;
 extern bool hourlyData;
@@ -95,3 +101,6 @@ void StartNewBatch(const char *grainName);
 void GetBatteryVoltage();
 Config GetFlashConfiguration();
 void SaveFlashConfiguration();
+void AutoControl();
+void AutoDry();
+void AutoAerate();

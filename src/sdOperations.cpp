@@ -48,6 +48,9 @@ void InitiallizeSD()
         config.batchDryingTime = tempConfig.batchDryingTime;
         config.batchNumber = tempConfig.batchNumber;
         config.batchStartTime = tempConfig.batchStartTime;
+        config.minDryingTemperature = tempConfig.minDryingTemperature;
+        config.targetMoisture = tempConfig.targetMoisture;
+        config.targetTemperature = tempConfig.targetTemperature;
         memcpy(config.grain, tempConfig.grain, sizeof(tempConfig.grain));
       }
     }
@@ -73,6 +76,9 @@ void GetConfigFile()
   config.batchDryingTime = doc["batchDryingTime"];
   config.batchAerateTime = doc["batchAerateTime"];
   config.batchStartTime = doc["batchStartTime"];
+  config.minDryingTemperature = doc["minDryingTemperature"];
+  config.targetMoisture = doc["targetMoisture"];
+  config.targetTemperature = doc["targetTemperature"];
 
   //Serial.print("Grain in GetConfigFile: ");
   //Serial.println(config.grain);
@@ -103,6 +109,9 @@ void SaveConfigFile()
   doc["batchDryingTime"] = config.batchDryingTime;
   doc["batchAerateTime"] = config.batchAerateTime;
   doc["batchStartTime"] = config.batchStartTime;
+  doc["minDryingTemperature"] = config.minDryingTemperature;
+  doc["targetTemperature"] = config.targetTemperature;
+  doc["targetMoisture"] = config.targetMoisture;
 
   if(serializeJson(doc, file) == 0)
   {

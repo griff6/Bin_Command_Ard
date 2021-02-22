@@ -1,8 +1,12 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-void initiallizeMQTT();
+void ConnectWirelessNetwork();
+bool WirelessConnected();
+void MaintainConnections();
+bool connectWifi();
 bool connectGSM();
+void initiallizeMQTT();
 void connectMQTT();
 String calculateClientId();
 String calculateJWT();

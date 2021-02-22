@@ -3,8 +3,10 @@
 #include <SD.h>
 #include <SPI.h>
 #include <ArduinoJson.h>
-#include "gsmConnection.h"
+#include "wirelessConnection.h"
 #include "sdOperations.h"
+#include "Engine_Control.h"
+#include "binCables.h"
 
 FlashStorage(config_flash, Config);
 
@@ -75,4 +77,72 @@ Config GetFlashConfiguration()
 void SaveFlashConfiguration()
 {
   config_flash.write(config);
+}
+
+void AutoControl()
+{
+  if(userEngineCommand != AUTO)
+  {
+    return;
+  }
+
+  if(fanMode == DRY)
+  {
+    AutoDry();
+  }else if(fanMode == AERATE)
+  {
+    AutoAerate();
+  }
+}
+
+void AutoDry()
+{
+  if(filteredValues.filteredAirTemp < config.minDryingTemperature)
+  {
+    //No point running the fan if it is too cold.
+    if(engineState == RUNNING)
+      SetThrottle(COOLDOWN);
+
+    return;
+  }
+
+  if(avgGrainMoisture <= config.targetMoisture)
+  {
+    AutoAerate();
+    return;
+  }else{
+    if(engineState == RUNNING)
+      return;
+
+    startEngine = true;
+    starterAttempt = 0;
+    EngineStartSequence();
+  }
+}
+
+void AutoAerate()
+{
+  double emc;
+  if(maxGrainTemp < config.targetTemperature+5)
+  {
+    if(engineState == RUNNING)
+      SetThrottle(COOLDOWN);
+
+    return;
+  }
+
+  emc = CalculateMoisture(filteredValues.filteredAirHumidity, filteredValues.filteredAirTemp);
+
+  if(emc > config.targetMoisture)
+  {
+    if(engineState == RUNNING)
+      SetThrottle(COOLDOWN);
+  }else{
+    if(engineState == RUNNING)
+      return;
+
+    startEngine = true;
+    starterAttempt = 0;
+    EngineStartSequence();
+  }
 }

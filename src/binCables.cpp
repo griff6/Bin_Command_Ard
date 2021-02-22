@@ -54,12 +54,12 @@ void GetBinCableValues()
   double moisture;
   unsigned int SO_RH;
 
-  maxTemp = 0;
-  minTemp = 65536;
-  avgTemp = 0;
-  maxMoisture = 0;
-  minMoisture =65536;
-  avgMoisture = 0;
+  maxGrainTemp = 0;
+  minGrainTemp = 65536;
+  avgGrainTemp = 0;
+  maxGrainMoisture = 0;
+  minGrainMoisture =65536;
+  avgGrainMoisture = 0;
 
   for(int cable = 0; cable < 3; cable++)
   {
@@ -88,15 +88,15 @@ void GetBinCableValues()
         cableValues[cable].sensors[index].temperature = temp;
         cableValues[cable].sensors[index].moisture = moisture;
 
-        if(temp > maxTemp)
-          maxTemp = temp;
-        if(temp < minTemp)
-          minTemp = temp;
+        if(temp > maxGrainTemp)
+          maxGrainTemp = temp;
+        if(temp < minGrainTemp)
+          minGrainTemp = temp;
 
-        if(moisture > maxMoisture)
-          maxMoisture = moisture;
-        if(moisture < minMoisture)
-          minMoisture = moisture;
+        if(moisture > maxGrainMoisture)
+          maxGrainMoisture = moisture;
+        if(moisture < minGrainMoisture)
+          minGrainMoisture = moisture;
 
         cableValues[cable].avgM += moisture;
         cableValues[cable].avgT += temp;
@@ -128,8 +128,8 @@ void GetBinCableValues()
 
     if(numDevices > 0)
     {
-      avgMoisture += cableValues[cable].avgM;
-      avgTemp += cableValues[cable].avgT;
+      avgGrainMoisture += cableValues[cable].avgM;
+      avgGrainTemp += cableValues[cable].avgT;
     }
 
   /*  Serial.print("Cable ");
@@ -144,8 +144,8 @@ void GetBinCableValues()
   }
 
   if(numCables > 0){
-    avgMoisture = avgMoisture / numCables;
-    avgTemp = avgTemp / numCables;
+    avgGrainMoisture = avgGrainMoisture / numCables;
+    avgGrainTemp = avgGrainTemp / numCables;
   }
 /*
   Serial.print(" Average Temperature is ");
