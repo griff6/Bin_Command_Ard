@@ -17,6 +17,7 @@ CableValues cableValues[3];
 EngineCommand userEngineCommand = OFF;
 EngineState engineState = STOPPED;
 FanMode fanMode = DRY;
+ConnectionType connectionType = NONE;
 bool startEngine = false;
 int starterAttempt = 500;
 bool updateEngineState = false;
@@ -61,12 +62,16 @@ void setup() {
   }
 
   Serial.println("Starting the Program");
+
+  pinMode(CONN_LED_PIN, OUTPUT);
+
   InitiallizeSD();
 
   Wire.begin();
 
   //InitiallizeConnections();
   ConnectWirelessNetwork();
+  //CheckConnectionMode();
 
   SetupRPMSensor();
   SetupPressure();
@@ -87,6 +92,7 @@ void loop() {
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
+  CheckConnectionMode();
   MaintainConnections();
 
   collectSensorData.check();

@@ -4,7 +4,7 @@
  #include "RPM_Sensor.h"
  #include "SharedResources.h"
 
- #define RPM_PIN 6       //Pin for the RPM Input
+//
 
 int pulseCount = 0;
 float rpm;

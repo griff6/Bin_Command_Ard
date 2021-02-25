@@ -5,7 +5,7 @@
 #include <Math.h>
 
 // Setup a oneWire instance to communicate with any OneWire devices
-OneWire wires[3] = {OneWire(4), OneWire(7), OneWire(6)};
+OneWire wires[3] = {OneWire(BIN_CBL_1), OneWire(BIN_CBL_2), OneWire(BIN_CBL_3)};
 //OneWire oneWire1(3);  //Cable 1 is connected to pin 3
 //OneWire oneWire2(4);  //Cable 2 is connected to pin 4
 //OneWire oneWire3(5);  //Cable 3 is connected to pin 5

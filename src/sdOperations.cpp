@@ -13,7 +13,7 @@ void InitiallizeSD()
 
   //float tempEngineTime = engineTime_Flash.read();
 
-  if (!SD.begin(A0)) {
+  if (!SD.begin(CS_PIN)) {
     Serial.println("Could not initiallize SD card");
     //while (1);
   }else{

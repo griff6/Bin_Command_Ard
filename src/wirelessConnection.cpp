@@ -10,6 +10,7 @@
 #include "RPM_Sensor.h"
 #include "Bin_Pressure_Sensor.h"
 #include "sdOperations.h"
+#include <ArduinoUniqueID.h>
 
 //#include <MKRGSM.h>
 #include <WiFiNINA.h>
@@ -23,7 +24,8 @@ const char gprs_password[] = SECRET_GPRS_PASSWORD;
 const char projectId[]     = SECRET_PROJECT_ID;
 const char cloudRegion[]   = SECRET_CLOUD_REGION;
 const char registryId[]    = SECRET_REGISTRY_ID;
-const String deviceId      = SECRET_DEVICE_ID;
+//const String deviceId;      = SECRET_DEVICE_ID;
+String deviceId;
 const String projID       = SECRET_PROJECT_ID;
 
 char ssid[] = SECRET_SSID;        // your network SSID (name)
@@ -39,6 +41,8 @@ bool locationSet = false;
 bool wirelessConnected = false;
 unsigned long wirelessInterval = 3600000;   //1 hour
 unsigned long lastWirelessAttempt = 0;
+unsigned long mqttConnectInterval = 900000; //15 getMinutes
+unsigned long lastMQTTattempt = 0;
 
 void ConnectWirelessNetwork()
 {
@@ -63,10 +67,19 @@ bool WirelessConnected()
   return false;
 }
 
+bool MQTTConnected()
+{
+  if (!mqttClient.connected()) {
+    // MQTT client is disconnected,
+    return false;
+  }
+  return true;
+}
+
 void MaintainConnections()
 {
   //If connection has been lost, keep trying to reconnect every hour
-  if(!!WirelessConnected() && lastWirelessAttempt < millis())
+  if(!WirelessConnected() && lastWirelessAttempt < millis())
   {
     ConnectWirelessNetwork();
     lastWirelessAttempt = millis() + wirelessInterval;
@@ -184,9 +197,22 @@ void initiallizeMQTT()
 {
     if (!ECCX08.begin()) {
     Serial.println("No ECCX08 present!");
-    while (1);
+    //while (1);
   }
 
+  deviceId = "W";
+  for (size_t i = 0; i < UniqueIDsize; i++)
+  {
+    if (UniqueID[i] < 0x10)
+      deviceId += "0";
+      //Serial.print("0");
+    //Serial.print(UniqueID[i], HEX);
+    deviceId += String(UniqueID[i], HEX);
+    //Serial.print(" ");
+  }
+
+  Serial.print("Device ID: ");
+  Serial.println(deviceId);
   // Calculate and set the client id used for MQTT
   String clientId = calculateClientId();
 
@@ -204,6 +230,8 @@ unsigned long getTime() {
 }
 
 void connectMQTT() {
+  //int attempts = 0;
+
   if (mqttClient.connected()) {
     // MQTT client is connected already
     return;
@@ -222,9 +250,17 @@ void connectMQTT() {
 
     if (!mqttClient.connect(broker, 8883)) {
       // failed, retry
-      Serial.println(".");
-      delay(5000);
+      //Serial.println(".");
+      //delay(500);
+      Serial.println("Failed to Connect to MQTT broker");
+      return;
     }
+
+    //if(attempts++ >= 1)
+    //{
+    //  Serial.println("Failed to Connect to MQTT broker");
+    //  return;
+    //}
   }
   Serial.println();
 
@@ -239,6 +275,7 @@ void connectMQTT() {
   // subscribe to topics
   mqttClient.subscribe("/devices/" + deviceId + "/config", 1);
   mqttClient.subscribe("/devices/" + deviceId + "/commands/#");
+
 
   if(!timeIsSet)
     RequestTimeStamp();
@@ -289,15 +326,25 @@ String calculateJWT() {
 
 void MQTT_Poll()
 {
-  CheckConnection();
+  //CheckConnection();
 
-  if (!mqttClient.connected()) {
-    // MQTT client is disconnected, connect
+  if(!WirelessConnected())
+    return;
+
+  if(!mqttClient.connected() && lastMQTTattempt < millis())
+  {
     connectMQTT();
-
+    lastMQTTattempt = millis() + mqttConnectInterval;
   }
 
-  mqttClient.poll();
+  //if (!mqttClient.connected()) {
+
+    // MQTT client is disconnected, connect
+//    connectMQTT();
+//  }
+
+  if(mqttClient.connected())
+    mqttClient.poll();
 }
 
 void CheckConnection()
@@ -506,6 +553,7 @@ void updateLiveData() {
   Serial.println();
 }
 
+
 void RequestTimeStamp() {
   mqttClient.beginMessage("/devices/" + deviceId + "/events/TIMESTAMP");
 
@@ -617,6 +665,9 @@ void onMessageReceived(int messageSize) {
     Serial.print("Received start new batch command with grain: ");
     Serial.println(attribute1);
     StartNewBatch(attribute1);
+  }else if(strcmp(command, "008") == 0)     //message with the device serial number
+  {
+
   }
 }
 

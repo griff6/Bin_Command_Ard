@@ -1,7 +1,7 @@
 #include "Bin_Pressure_Sensor.h"
 #include "SharedResources.h"
 
-#define PRESSURE_PIN A1  //Pin for the pressure sensor
+//#define PRESSURE_PIN A1  //Pin for the pressure sensor
 
 float sp_fc = .75;//.2;            // higher value puts less filtering
 float static_pressure = 0;

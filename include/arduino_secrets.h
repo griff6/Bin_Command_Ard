@@ -8,7 +8,7 @@
 #define SECRET_PROJECT_ID   "bin-command-2"
 #define SECRET_CLOUD_REGION "us-central1"
 #define SECRET_REGISTRY_ID  "Registry_1"
-#define SECRET_DEVICE_ID    "R9W0A0002"
+//#define SECRET_DEVICE_ID    "Z3S0A0003"
 
 
 //wifi settings

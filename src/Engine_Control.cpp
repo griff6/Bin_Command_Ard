@@ -2,8 +2,8 @@
 #include "SharedResources.h"
 
 
-#define START_PIN 3     //Pin for the start output relay
-#define ACC_PIN 2       //Pin for the Accessories relay
+//#define START_PIN 3     //Pin for the start output relay
+//#define ACC_PIN 2       //Pin for the Accessories relay
 
 const int STARTER_TIME = 1250;      //time to run the starter in ms
 unsigned long engineStartInterval = 10000;  //delay between attempts to start engine
@@ -73,7 +73,6 @@ void TurnEngineOff()
   Serial.println("Turning Engine OFF");
   digitalWrite(START_PIN, LOW);
   digitalWrite(ACC_PIN, LOW);
-  accPinHigh = false;
   accPinHigh = false;
   startEngine = false;
   starterAttempt = 0;
@@ -203,24 +202,36 @@ void CheckManualStart()
 {
   double pinValue = 0;
 
-  digitalWrite(ACC_PIN, LOW);
+  //if the controller is in an error state, do nothing
+  if(engineState == FAILED_START)
+    return;
 
-  pinValue = analogRead(ACC_PIN);
+  digitalWrite(ACC_PIN, LOW);       //Set pin low
+  pinMode(ACC_PIN, INPUT_PULLUP);   //switch pin to input and enable internal pullup
+  pinValue = analogRead(ACC_PIN);   //sample the pin
+  pinMode(ACC_PIN, OUTPUT);         //Set pin back to an output
 
+  //put pin back into the mode it was in before the read
   if(accPinHigh)
     digitalWrite(ACC_PIN, HIGH);
   else
     digitalWrite(ACC_PIN, LOW);
 
-  if(pinValue == HIGH && userEngineCommand != ON)
+  if(pinValue >= 900)   //pin high
   {
-    startEngine = true;
-    starterAttempt = 0;
-    userEngineCommand = ON;
-  }else if(pinValue == LOW && userEngineCommand != OFF)
-  {
-    startEngine = false;
-    userEngineCommand = OFF;
-    SetThrottle(COOLDOWN);
+      if(engineState == RUNNING)
+      {
+        startEngine = false;
+        SetThrottle(COOLDOWN);
+      }else if(engineState == COOLDOWN || engineState == WARMUP)
+      {
+          startEngine = false;
+          TurnEngineOff();
+      }else if(engineState == STOPPED)
+      {
+          startEngine = true;
+          starterAttempt = 0;
+          userEngineCommand = ON;
+      }
   }
 }

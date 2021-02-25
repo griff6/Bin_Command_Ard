@@ -1,6 +1,24 @@
 #include <Arduino.h>
 #include <RTCZero.h>
 
+//pin definitions
+#define CS_PIN        0//A0  //chip select pin for SD card (A0 on production)
+#define PRESSURE_PIN  A1  //Input for static pressure sensor
+#define AIRFLOW_PIN   A2  //Input for airflow sensor
+#define BATT_PIN      A3  //Input pin for battery sensing
+#define CONN_LED_PIN  A4  //Pin for connection LED
+#define ACC_PIN       2   //Pin for the Accessories output signal (A5 on production)
+#define START_PIN     3   //Pin for the starter Output signal     (A6 on production)
+//#define SHT10_DATA    0   //Pin for SHT10 (fan temperature/humidity) sensor
+#define SHT10_CLK     1   //Pin for SHT10 (fan temperature/humidity) sensor
+//#define THT_UP        2   //Pin to drive the actuator for throttle up
+//#define THT_DN        3   //Pin to drive the actuator for throttle down
+#define BIN_CBL_1     4   //Pin for bin cable 1
+#define RPM_PIN       5   //Pin for the RPM Input
+#define BIN_CBL_2     6   //Pin for bin cable 2
+#define BIN_CBL_3     7   //Pin for bin cable 3
+
+
 struct FilteredValues{
 public:
   float filteredRPM = 0;
@@ -52,6 +70,12 @@ enum FanMode{
   DRY,
 };
 
+enum ConnectionType{
+  NONE,
+  BT,
+  WIRELESS,
+};
+
 struct Config{
   char grain[30];
   int batchNumber;
@@ -63,6 +87,8 @@ struct Config{
   float minDryingTemperature;
   float targetMoisture;
   float targetTemperature;
+  char binName[100];
+
 };
 
 extern float maxGrainTemp;
@@ -89,6 +115,8 @@ extern float minDryingTemperature;
 extern RTCZero rtc;
 extern bool hourlyData;
 
+extern ConnectionType connectionType;
+
 
 
 void filterValue(float newReading, float &filtValue, float fc);
@@ -104,3 +132,4 @@ void SaveFlashConfiguration();
 void AutoControl();
 void AutoDry();
 void AutoAerate();
+void CheckConnectionMode();

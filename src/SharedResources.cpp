@@ -10,6 +10,10 @@
 
 FlashStorage(config_flash, Config);
 
+unsigned long ledFlashInterval = 1000;  //delay between attempts to start engine
+unsigned long prevLEDflash = 0;
+int LEDstate = HIGH;
+
 //Filter the raw values
 void filterValue(float newReading, float &filtValue, float fc)
 {
@@ -65,7 +69,7 @@ void GetBatteryVoltage()
 {
   //get the battery voltage
   analogReadResolution(12);
-  batteryVoltage = analogRead(A3) * (3.3 / 4096);
+  batteryVoltage = analogRead(BATT_PIN) * (3.3 / 4096);
   batteryVoltage = 10.652 * pow(batteryVoltage,2)-29.608 * batteryVoltage + 27.713;
 }
 
@@ -144,5 +148,38 @@ void AutoAerate()
     startEngine = true;
     starterAttempt = 0;
     EngineStartSequence();
+  }
+}
+
+void CheckConnectionMode()
+{
+  if(WirelessConnected() && MQTTConnected())
+  {
+    //Serial.println("Connected");
+    digitalWrite(CONN_LED_PIN, HIGH);
+    LEDstate = HIGH;
+  }else if(WirelessConnected() && !MQTTConnected())
+  {
+    ledFlashInterval = 100;
+
+    if (millis() - prevLEDflash >= ledFlashInterval)
+    {
+      prevLEDflash = millis();
+
+      //Serial.println("Connected - no MQTT");
+
+      if(LEDstate == HIGH)
+      {
+        LEDstate = LOW;
+        digitalWrite(CONN_LED_PIN, LOW);
+      }else{
+        LEDstate = HIGH;
+        digitalWrite(CONN_LED_PIN, HIGH);
+      }
+    }
+  }else{
+    //Serial.println("Not Connected");
+    digitalWrite(CONN_LED_PIN, LOW);
+    LEDstate = LOW;
   }
 }

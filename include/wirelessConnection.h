@@ -3,6 +3,7 @@
 
 void ConnectWirelessNetwork();
 bool WirelessConnected();
+bool MQTTConnected();
 void MaintainConnections();
 bool connectWifi();
 bool connectGSM();
@@ -16,6 +17,7 @@ void publishDataMessage();
 float Round(float var);
 void publishEngineState();
 void updateLiveData();
+void RequestSerialNumber();
 void RequestTimeStamp();
 void GetLocation();
 void onMessageReceived(int messageSize);
