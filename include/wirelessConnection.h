@@ -22,5 +22,4 @@ void RequestTimeStamp();
 void GetLocation();
 void onMessageReceived(int messageSize);
 void setRTCTime(DynamicJsonDocument doc);
-String print2digits(int number);
 void printWiFiStatus();

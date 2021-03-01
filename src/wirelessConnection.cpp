@@ -485,13 +485,6 @@ void publishDataMessage() {
   //Serial.println("Published Message.");
 }
 
-//round a number to one decimal place
-float Round(float var)
-{
-  float value = (int)(var * 10 + 0.5);
-  return (float)value/10;
-}
-
 void publishEngineState() {
 
   //if(lastEngineUpdate == engineState)
@@ -697,19 +690,6 @@ void setRTCTime(DynamicJsonDocument doc)
   print2digits(rtc.getSeconds());
   Serial.println();
   */
-}
-
-
-String print2digits(int number) {
-  String ret = "";
-  ret = ret + number;
-
-  if (number < 10) {
-    //Serial.print("0"); // print a 0 before if the number is < than 10
-    ret = "0" + ret;
-  }
-  //Serial.print(number);
-  return ret;
 }
 
 void printWiFiStatus() {

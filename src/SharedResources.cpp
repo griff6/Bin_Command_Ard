@@ -183,3 +183,22 @@ void CheckConnectionMode()
     LEDstate = LOW;
   }
 }
+
+String print2digits(int number) {
+  String ret = "";
+  ret = ret + number;
+
+  if (number < 10) {
+    //Serial.print("0"); // print a 0 before if the number is < than 10
+    ret = "0" + ret;
+  }
+  //Serial.print(number);
+  return ret;
+}
+
+//round a number to one decimal place
+float Round(float var)
+{
+  float value = (int)(var * 10 + 0.5);
+  return (float)value/10;
+}

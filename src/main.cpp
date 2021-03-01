@@ -10,6 +10,7 @@
 #include "binCables.h"
 #include "TimedAction.h"
 #include "sdOperations.h"
+#include "bluetooth.h"
 
 FilteredValues filteredValues;
 Config config;
@@ -83,6 +84,8 @@ void setup() {
 
   SetupBinCables();
 
+  InitiallizeBluetooth();
+
   lastEngineTime = millis();
 
   Serial.println("Program Initiallized");
@@ -94,6 +97,8 @@ void loop() {
 
   CheckConnectionMode();
   MaintainConnections();
+
+  CheckBluetooth();
 
   collectSensorData.check();
   collectBinSensorData.check();
