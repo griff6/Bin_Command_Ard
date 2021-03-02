@@ -175,7 +175,7 @@ void SaveDataRecord(DynamicJsonDocument doc)
   file.close();
 
 //For Debugging only
-  GetDataRecord(1613772391);
+//  GetDataRecord(1613772391);
 }
 
 void GetDataRecord(unsigned long input)

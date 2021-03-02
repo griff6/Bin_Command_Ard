@@ -1,7 +1,8 @@
 #include "bluetooth.h"
 #include "SharedResources.h"
 
-
+unsigned long bleHeartbeat = 1000; //1 second
+unsigned long lastHearbeat = 0;
 
 void InitiallizeBluetooth()
 {
@@ -10,6 +11,14 @@ void InitiallizeBluetooth()
 
 void CheckBluetooth(){
   String inputString = "";
+
+  //Send a connection heartbeat
+  if(lastHearbeat < millis())
+  {
+    Serial1.write("H,");
+
+    lastHearbeat = millis() + bleHeartbeat;
+  }
 
   while(Serial1.available())
   {
@@ -29,6 +38,8 @@ void CheckBluetooth(){
 void PublisBluetoothDataMessage() {
   int fanStatus = 0;
   String cableNum = "C0";
+  String val;
+  char value[100];
 
   if(filteredValues.filteredRPM > 100)
   {
@@ -56,74 +67,218 @@ void PublisBluetoothDataMessage() {
   //DynamicJsonDocument doc(capacity);
 
   //doc["ts"] = ts;
-  char value[100];
   ts.toCharArray(value, 100);
   Serial1.write("ts,");
   Serial1.print(value);
-  Serial.print("TIMESTAMP: ");
+  Serial.print("ts: ");
   Serial.println(value);
-
   delay(10);
 
-  //doc["msg"] = 0;
+  val = "ap,";
+  val += String(Round(filteredValues.filteredAirPressure));
+  val += ",ah,";
+  val += String(Round(filteredValues.filteredAirHumidity));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
 
-  Serial1.write("ap,");
+  val = "at,";
+  if(filteredValues.filteredAirTemp == 65536 || filteredValues.filteredAirTemp == -65536)
+    val += " ";
+  else
+    val += String(Round(filteredValues.filteredAirTemp));
+  val += ",fs,";
+  val += String(fanStatus);
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
 
-  binaryFloat floatVal;
-  floatVal.floatingPoint = Round(filteredValues.filteredAirPressure);
-  Serial1.write(floatVal.binary, 4);
+  val = "fh,";
+  if(filteredValues.filteredFanHumidity == 65536 || filteredValues.filteredFanHumidity == -65536)
+    val += " ";
+  else
+    val += String(Round(filteredValues.filteredFanHumidity));
+  val += ",ft,";
+  if(filteredValues.filteredFanTemp == 65536 || filteredValues.filteredFanTemp == -65536)
+    val += " ";
+  else
+    val += String(Round(filteredValues.filteredFanTemp));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
 
-  //Serial1.write(Round(filteredValues.filteredAirPressure));
-  //doc["ap"] = Round(filteredValues.filteredAirPressure);
-/*  doc["ah"] = Round(filteredValues.filteredAirHumidity);
-  doc["at"] = Round(filteredValues.filteredAirTemp);
-  doc["fs"] = fanStatus;
-  doc["fh"] = Round(filteredValues.filteredFanHumidity);
-  doc["ft"] = Round(filteredValues.filteredFanTemp);
-  doc["sp"] = Round(filteredValues.filteredSP);//serialized(String(filteredValues.filteredSP,1));
-  doc["minT"] = Round(minGrainTemp);
-  doc["maxT"] = Round(maxGrainTemp);
-  doc["avT"] = Round(avgGrainTemp);
-  doc["minM"] = Round(minGrainMoisture);
-  doc["maxM"] = Round(maxGrainMoisture);
-  doc["avM"] = Round(avgGrainMoisture);
-  doc["mode"] = fanMode;
-  doc["bn"] = config.batchNumber;
-  doc["ber"] = Round(config.batchEngineTime);
-  doc["bat"] = Round(config.batchAerateTime);
-  doc["bdt"] = Round(config.batchDryingTime);
-  doc["gn"] = config.grain;
-  doc["timestamp"] = rtc.getEpoch();
-  doc["batchStart"] = config.batchStartTime;
-  */
-/*
-  serializeJson(doc, Serial1);
-  //SaveDataRecord(doc);
+  val = "sp,";
+  if(filteredValues.filteredSP == 65536 || filteredValues.filteredSP == -65536)
+    val += " ";
+  else
+    val += String(Round(filteredValues.filteredSP));
+  val += ",minT,";
+  if(minGrainTemp == 65536 || minGrainTemp == -65536)
+    val += " ";
+  else
+    val += String(Round(minGrainTemp));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
 
+  val = "maxT,";
+  if(maxGrainTemp == 65536 || maxGrainTemp == -65536)
+    val += " ";
+  else
+    val += String(Round(maxGrainTemp));
+  val += ",avT,";
+  if(avgGrainTemp == 65536 || avgGrainTemp == -65536)
+    val += " ";
+  else
+    val += String(Round(avgGrainTemp));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+
+  val = "minM,";
+  if(minGrainMoisture == 65536 || minGrainMoisture == -65536)
+    val += " ";
+  else
+    val += String(Round(minGrainMoisture));
+  val += ",maxM,";
+  if(maxGrainMoisture == 65536 || maxGrainMoisture == -65536)
+    val += " ";
+  else
+    val += String(Round(maxGrainMoisture));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+
+  val = "avM,";
+  if(avgGrainMoisture == 65536 || avgGrainMoisture == -65536)
+    val += " ";
+  else
+    val += String(Round(avgGrainMoisture));
+  val += ",mode,";
+  val += String(fanMode);
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+
+  val = "bn,";
+  val += String(config.batchNumber);
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  val = "ber,";
+  val += String(Round(config.batchEngineTime));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  val = "bat,";
+  val += String(Round(config.batchAerateTime));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  val = "bdt,";
+  val += String(Round(config.batchDryingTime));
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  val = "gn,";
+  val += String(config.grain);
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  val = "time,";
+  val += String(rtc.getEpoch());
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  val = "bStart,";
+  val += String(config.batchStartTime);
+  val.toCharArray(value, 100);
+  Serial1.write(value);
+  Serial.println(value);
+  delay(10);
+
+  String cbl;
   for(int cable = 0; cable < numCables; cable++)
   {
-    DynamicJsonDocument doc(capacity);
-
-    doc["ts"] = ts;
-    doc["msg"] = cable+1;
-
-    JsonArray cableTemp = doc.createNestedArray("ct");
+    cbl = "C";
+    cbl += String(cable+1);    //cable identifier
+    //val += ",T";              //indicate this is the temperatures
 
     for(int i = 0; i < cableValues[cable].numSensors; i++)
     {
-      cableTemp.add(Round(cableValues[cable].sensors[i].temperature));
+      bool addedSecond = false;
+
+      val = cbl;
+      val += ",";
+      val += "T";
+      val += String(i);
+      val += ",";
+      val += String(Round(cableValues[cable].sensors[i].temperature));
+
+
+      if(i+1 < 10)
+      {
+        val += ",";
+        val += "T";
+        val += String(i+1);
+        val += ",";
+        val += String(Round(cableValues[cable].sensors[i+1].temperature));
+        addedSecond = true;
+      }
+
+      val.toCharArray(value, 100);
+      Serial1.write(value);
+      Serial.println(value);
+      delay(10);
+
+      val = cbl;
+      val += ",";
+      val += "M";
+      val += String(i);
+      val += ",";
+      val += String(Round(cableValues[cable].sensors[i].temperature));
+
+      if(i+1 < 10)
+      {
+        val += ",";
+        val += "M";
+        val += String(i+1);
+        val += ",";
+        val += String(Round(cableValues[cable].sensors[i+1].moisture));
+        addedSecond = true;
+      }
+
+      val.toCharArray(value, 100);
+      Serial1.write(value);
+      Serial.println(value);
+      delay(10);
+
+      if(addedSecond)
+        i++;
     }
 
-    JsonArray cableMois = doc.createNestedArray("mois");
-
-    for(int i = 0; i < cableValues[cable].numSensors; i++)
-    {
-      cableMois.add(Round(cableValues[cable].sensors[i].moisture));
-    }
-
-    serializeJson(doc, Serial1);
-    serializeJsonPretty(doc, Serial);
-    */
     Serial.println();
-//  }
+  }
 }

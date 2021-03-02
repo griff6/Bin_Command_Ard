@@ -22,12 +22,12 @@
 struct FilteredValues{
 public:
   float filteredRPM = 0;
-  float filteredSP = 0;
-  float filteredAirTemp = 0;
-  float filteredAirHumidity = 0;
-  float filteredAirPressure = 0;
-  float filteredFanTemp = 0;
-  float filteredFanHumidity = 0;
+  float filteredSP = 65536;
+  float filteredAirTemp = 65536;
+  float filteredAirHumidity = 65536;
+  float filteredAirPressure = 65536;
+  float filteredFanTemp = 65536;
+  float filteredFanHumidity = 65536;
 };
 
 struct BinSensor{
