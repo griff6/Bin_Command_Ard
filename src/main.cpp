@@ -34,6 +34,7 @@ int numCables = 0;
 bool timeIsSet = false;
 float batteryVoltage = 0;
 float minDryingTemperature = -10;
+bool bluetoothConnected = false;
 
 TimedAction collectSensorData = TimedAction(300000, CollectSensorData);     //Get sensor data every 5 minutes
 TimedAction collectBinSensorData = TimedAction(900001, GetBinCableValues);   //Get the cable data every 15 minutes
@@ -95,7 +96,7 @@ void loop() {
   long currentMillis = millis();
   long diffRPMTime = currentMillis - prevRPMCalc;
 
-  CheckConnectionMode();
+  CheckConnectionMode(); //SharedResources
   MaintainConnections();
 
   CheckBluetooth();

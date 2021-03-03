@@ -153,34 +153,37 @@ void AutoAerate()
 
 void CheckConnectionMode()
 {
-  if(WirelessConnected() && MQTTConnected())
+  if(bluetoothConnected)
   {
-    //Serial.println("Connected");
+    ledFlashInterval = 1000;
+  }
+  else if(WirelessConnected() && MQTTConnected())
+  {
     digitalWrite(CONN_LED_PIN, HIGH);
     LEDstate = HIGH;
+    return;
   }else if(WirelessConnected() && !MQTTConnected())
   {
-    ledFlashInterval = 100;
-
-    if (millis() - prevLEDflash >= ledFlashInterval)
-    {
-      prevLEDflash = millis();
-
-      //Serial.println("Connected - no MQTT");
-
-      if(LEDstate == HIGH)
-      {
-        LEDstate = LOW;
-        digitalWrite(CONN_LED_PIN, LOW);
-      }else{
-        LEDstate = HIGH;
-        digitalWrite(CONN_LED_PIN, HIGH);
-      }
-    }
+    ledFlashInterval = 5000;
   }else{
     //Serial.println("Not Connected");
     digitalWrite(CONN_LED_PIN, LOW);
     LEDstate = LOW;
+    return;
+  }
+
+  if (millis() - prevLEDflash >= ledFlashInterval)
+  {
+    prevLEDflash = millis();
+
+    if(LEDstate == HIGH)
+    {
+      LEDstate = LOW;
+      digitalWrite(CONN_LED_PIN, LOW);
+    }else{
+      LEDstate = HIGH;
+      digitalWrite(CONN_LED_PIN, HIGH);
+    }
   }
 }
 

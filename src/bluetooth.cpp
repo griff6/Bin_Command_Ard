@@ -2,7 +2,8 @@
 #include "SharedResources.h"
 
 unsigned long bleHeartbeat = 1000; //1 second
-unsigned long lastHearbeat = 0;
+unsigned long lastReceivedHearbeat = 0;
+unsigned long lastSentHeartbeat = 0;
 
 void InitiallizeBluetooth()
 {
@@ -11,27 +12,48 @@ void InitiallizeBluetooth()
 
 void CheckBluetooth(){
   String inputString = "";
+  String id = "";
 
   //Send a connection heartbeat
-  if(lastHearbeat < millis())
+  if(lastSentHeartbeat < millis())
   {
-    Serial1.write("H,");
+    Serial1.write("H");
 
-    lastHearbeat = millis() + bleHeartbeat;
+    lastSentHeartbeat = millis() + bleHeartbeat;
   }
 
   while(Serial1.available())
   {
     inputString = Serial1.readString();
-
-    Serial.print("Bluetooth Input: ");
+    Serial.print("Bluetooth Command Received: ");
     Serial.println(inputString);
   }
 
-  if(inputString == "001") {             //requesting bin name
+while(inputString.indexOf(',') > 0){
+  id = inputString.substring(0, inputString.indexOf(','));
+  inputString.remove(0, inputString.indexOf(',')+1);
+
+  //Serial.print("id: ");
+  //Serial.println(id);
+
+  if(id == "H")
+    lastReceivedHearbeat = millis();
+  else if(id == "001") {             //requesting bin name
+    //TODO: Change this, it is just for testing.
     Serial1.write("Test Bin 1");
-  }if(inputString == "002"){            //requesting record
+  }if(id == "002"){            //requesting record
     PublisBluetoothDataMessage();
+  }
+}
+
+  //Check the received connection heartbeat
+  if(lastReceivedHearbeat+15000 > millis())
+  {
+    bluetoothConnected = true;
+  }else{
+    //Serial.println("HERE");
+    bluetoothConnected = false;
+    lastReceivedHearbeat = 0;
   }
 }
 

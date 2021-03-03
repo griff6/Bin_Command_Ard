@@ -116,6 +116,7 @@ extern RTCZero rtc;
 extern bool hourlyData;
 
 extern ConnectionType connectionType;
+extern bool bluetoothConnected;
 
 
 
