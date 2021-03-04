@@ -87,6 +87,13 @@ void setup() {
 
   InitiallizeBluetooth();
 
+  GetBinCableValues();
+  GetBatteryVoltage();
+  Save_RPM();
+  GetPressure();
+  PrintBME280Data();
+  GetFanData();
+
   lastEngineTime = millis();
 
   Serial.println("Program Initiallized");
@@ -114,7 +121,7 @@ void loop() {
   }
 
   //This is for debugging to get initial data for testing.
-  if(timeIsSet &&  firstLoop == true)
+  /*if(timeIsSet &&  firstLoop == true)
   {
     GetBinCableValues();
 
@@ -130,6 +137,7 @@ void loop() {
 
     firstLoop = false;
   }
+  */
 
   if(hourlyData){
     //HandleHourlyData();

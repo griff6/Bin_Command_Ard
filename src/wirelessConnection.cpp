@@ -230,7 +230,7 @@ unsigned long getTime() {
 }
 
 void connectMQTT() {
-  //int attempts = 0;
+  int attempts = 0;
 
   if (mqttClient.connected()) {
     // MQTT client is connected already
@@ -256,11 +256,11 @@ void connectMQTT() {
       return;
     }
 
-    //if(attempts++ >= 1)
-    //{
-    //  Serial.println("Failed to Connect to MQTT broker");
-    //  return;
-    //}
+    if(attempts++ >= 2)
+    {
+      Serial.println("Failed to Connect to MQTT broker");
+      return;
+    }
   }
   Serial.println();
 

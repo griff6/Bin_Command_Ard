@@ -42,8 +42,8 @@ class CableValues
 {
 public:
 
-  float avgT = 0;
-  float avgM = 0;
+  float avgT = 65536;
+  float avgM = 65536;
   int maxAddress = -1;
   int minAddress = 65536;
   int numSensors = 0;
@@ -87,8 +87,8 @@ struct Config{
   float minDryingTemperature;
   float targetMoisture;
   float targetTemperature;
-  char binName[100];
-
+  char binName[18];
+  char serialNumber[10];
 };
 
 extern float maxGrainTemp;

@@ -155,7 +155,7 @@ void CheckConnectionMode()
 {
   if(bluetoothConnected)
   {
-    ledFlashInterval = 1000;
+    ledFlashInterval = 100;
   }
   else if(WirelessConnected() && MQTTConnected())
   {
@@ -164,7 +164,7 @@ void CheckConnectionMode()
     return;
   }else if(WirelessConnected() && !MQTTConnected())
   {
-    ledFlashInterval = 5000;
+    ledFlashInterval = 1000;
   }else{
     //Serial.println("Not Connected");
     digitalWrite(CONN_LED_PIN, LOW);

@@ -8,4 +8,5 @@ typedef union{
 
 void InitiallizeBluetooth();
 void CheckBluetooth();
-void PublisBluetoothDataMessage();
+void PublishBluetoothDataMessage();
+void SendMessage(String);

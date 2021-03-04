@@ -128,8 +128,15 @@ void GetBinCableValues()
 
     if(numDevices > 0)
     {
-      avgGrainMoisture += cableValues[cable].avgM;
-      avgGrainTemp += cableValues[cable].avgT;
+      if(avgGrainMoisture == 65536)
+        avgGrainMoisture = cableValues[cable].avgM;
+      else
+        avgGrainMoisture += cableValues[cable].avgM;
+
+      if(avgGrainTemp == 65536)
+        avgGrainTemp = cableValues[cable].avgT;
+      else
+        avgGrainTemp += cableValues[cable].avgT;
     }
 
   /*  Serial.print("Cable ");

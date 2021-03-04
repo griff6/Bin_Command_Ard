@@ -15,6 +15,7 @@ void InitiallizeSD()
 
   if (!SD.begin(CS_PIN)) {
     Serial.println("Could not initiallize SD card");
+    config = GetFlashConfiguration();
     //while (1);
   }else{
     Serial.println("SD card initiallized.");
@@ -27,20 +28,21 @@ void InitiallizeSD()
 
       config = GetFlashConfiguration();//config_flash.read();
 
-      SaveConfigFile();
+      //SaveConfigFile();
 
     }else{
 
       GetConfigFile();
-      Config tempConfig = GetFlashConfiguration();//config_flash.read();
 
-      if(tempConfig.engineTime <= config.engineTime)
-      {
+      //Config tempConfig = GetFlashConfiguration();//config_flash.read();
+
+      //if(tempConfig.engineTime <= config.engineTime)
+      //{
         Serial.println("Using configuration file values");
 
         //config_flash.write(config);
         SaveFlashConfiguration();
-      }else{
+      /*}else{
         Serial.println("Using flash memory configuration values");
 
         config.engineTime = tempConfig.engineTime;
@@ -51,8 +53,11 @@ void InitiallizeSD()
         config.minDryingTemperature = tempConfig.minDryingTemperature;
         config.targetMoisture = tempConfig.targetMoisture;
         config.targetTemperature = tempConfig.targetTemperature;
+        memcpy(config.binName, tempConfig.binName, sizeof(tempConfig.binName));
         memcpy(config.grain, tempConfig.grain, sizeof(tempConfig.grain));
+        memcpy(config.serialNumber, tempConfig.serialNumber, sizeof(tempConfig.serialNumber));
       }
+      */
     }
   }
 }
@@ -79,6 +84,8 @@ void GetConfigFile()
   config.minDryingTemperature = doc["minDryingTemperature"];
   config.targetMoisture = doc["targetMoisture"];
   config.targetTemperature = doc["targetTemperature"];
+  strlcpy(config.binName, doc["binName"], sizeof(config.binName));
+  strlcpy(config.serialNumber, doc["serialNumber"], sizeof(config.serialNumber));
 
   //Serial.print("Grain in GetConfigFile: ");
   //Serial.println(config.grain);
@@ -112,6 +119,8 @@ void SaveConfigFile()
   doc["minDryingTemperature"] = config.minDryingTemperature;
   doc["targetTemperature"] = config.targetTemperature;
   doc["targetMoisture"] = config.targetMoisture;
+  doc["binName"] = config.binName;
+  doc["serialNumber"] = config.serialNumber;
 
   if(serializeJson(doc, file) == 0)
   {
