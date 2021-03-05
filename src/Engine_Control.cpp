@@ -80,8 +80,10 @@ void TurnEngineOff()
   Serial.print("engineState: ");
   Serial.println(engineState);
 
-  if(engineState != STOPPED)
-    updateEngineState = true;
+  if(engineState != STOPPED){
+    updateCloudEngineState = true;
+    updateBLEengineState = true;
+  }
 
   engineState = STOPPED;
   stopCooldDownTime = 0;
@@ -123,7 +125,8 @@ void EngineStartSequence()
     startEngine = false;
     starterAttempt = 500;
     engineState = FAILED_START;
-    updateEngineState = true;
+    updateCloudEngineState = true;
+    updateBLEengineState = true;
     stopWarmUpTime = 0;
   }
 }
@@ -149,7 +152,8 @@ void Run_Starter()
     SetThrottle(WARMUP);
     startEngine = false;
     starterAttempt = 500;
-    updateEngineState = true;
+    updateCloudEngineState = true;
+    updateBLEengineState = true;
   }
 }
 
@@ -159,12 +163,14 @@ void SetThrottle(int mode)
   {
     //TODO: Slow the throttle down to idle
     fanMode = AERATE;
-    updateEngineState = true;
+    updateCloudEngineState = true;
+    updateBLEengineState = true;
   }else if(mode == DRY)
   {
     //TODO: Move to full throttle position
     fanMode = DRY;
-    updateEngineState = true;
+    updateCloudEngineState = true;
+    updateBLEengineState = true;
   }else if(mode == WARMUP)
   {
     //TODO: Move throttle to idle to warm up position
@@ -175,7 +181,8 @@ void SetThrottle(int mode)
     }else if(fanMode == DRY){
       stopWarmUpTime = millis() + warmUpInterval;
       engineState = WARMUP;
-      updateEngineState = true;
+      updateCloudEngineState = true;
+      updateBLEengineState = true;
     }
   }else if(mode == COOLDOWN)
   {
@@ -193,7 +200,8 @@ void SetThrottle(int mode)
 
       stopCooldDownTime = millis() + coolDownInterval;
       engineState = COOLDOWN;
-      updateEngineState = true;
+      updateCloudEngineState = true;
+      updateBLEengineState = true;
     }
   }
 }

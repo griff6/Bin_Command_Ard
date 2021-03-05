@@ -90,7 +90,7 @@ void MaintainConnections()
     MQTT_Poll();
     //RequestTimeStamp();
   //  GetLocation();
-    if(updateEngineState)
+    if(updateCloudEngineState)
     {
       publishEngineState();
     }
@@ -515,7 +515,7 @@ if(!WirelessConnected())
 
 //  lastEngineUpdate = engineState;
 
-  updateEngineState = false;
+  updateCloudEngineState = false;
 }
 
 void updateLiveData() {
@@ -537,8 +537,8 @@ void updateLiveData() {
   doc["sp"] = Round(filteredValues.filteredSP);
   doc["eh"] = Round(config.engineTime);
   doc["bv"] = Round(batteryVoltage);
-  doc["pt"] = Round(filteredValues.filteredFanTemp);
-  doc["ph"] = Round(filteredValues.filteredFanHumidity);
+  doc["ft"] = Round(filteredValues.filteredFanTemp);
+  doc["fh"] = Round(filteredValues.filteredFanHumidity);
 
   serializeJson(doc, mqttClient);
   mqttClient.endMessage();

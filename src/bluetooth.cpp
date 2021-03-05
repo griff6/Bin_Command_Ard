@@ -21,9 +21,21 @@ void CheckBluetooth(){
   if(lastSentHeartbeat < millis())
   {
     Serial1.write("H");
-    //delay(10);
+    delay(10);
 
     lastSentHeartbeat = millis() + bleHeartbeat;
+  }
+
+  //Send engine Change State if required
+  if(updateBLEengineState)
+  {
+    delay(10);
+    updateBLEengineState = false;
+    String val = "fs,";
+    val += String(engineState);
+    Serial.print("Sending engine State: ");
+    Serial.println(val);
+    SendMessage(val);
   }
 
   int availableBytes = Serial1.available();
@@ -50,7 +62,17 @@ while(inputString.indexOf(',') > 0){
 
   }if(id == "002"){            //requesting record
     PublishBluetoothDataMessage();
-  }else if(id == "N"){
+  }else if(id == "004"){              //turn engine OFF
+    userEngineCommand = OFF;
+  }else if(id == "005"){            //turn engine ON
+    startEngine = true;
+    starterAttempt = 0;
+    userEngineCommand = ON;
+  }else if(id == "006")             //turn engine to AUTO
+  {
+    //TODO: Handle when the engine gets changed to AUTO
+  }
+  else if(id == "N"){
     inputString.toCharArray(config.binName, 20);
     SaveConfigFile();
     PublishBluetoothDataMessage();
