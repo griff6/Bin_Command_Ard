@@ -137,3 +137,4 @@ void AutoAerate();
 void CheckConnectionMode();
 String print2digits(int number);
 float Round(float var);
+void ProcessDataRecord();

@@ -354,135 +354,30 @@ void CheckConnection()
   //}
 }
 
-void publishDataMessage() {
+void publishDataMessage(DynamicJsonDocument doc, bool tempCable) {
 
   if(!wirelessConnected){
     return;
   }
 
-  int fanStatus = 0;
-  String cableNum = "C0";
-
-  if(filteredValues.filteredRPM > 100)
-  {
-    fanStatus = 1;
-  }
-
-  Serial.println();
-  Serial.println("Publishing message");
   mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
+  Serial.println("Writing data to Google Firestore");
 
-  //https://arduinojson.org/v6/assistant/ gives some details on how to calculate the size
-  //https://arduinojson.org/v5/assistant/
-  //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
-  //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
-  //const size_t capacity;// = JSON_OBJECT_SIZE(20);// + JSON_OBJECT_SIZE(16*numCables);
-  //DynamicJsonDocument doc(capacity);
-  //DynamicJsonDocument doc(431);
-  //size_t capacity = JSON_OBJECT_SIZE(78);
-
-  String ts = "";
-  ts = ts + print2digits(rtc.getYear());
-  ts += "-";
-  ts += print2digits(rtc.getMonth());
-  ts += "-";
-  ts += print2digits(rtc.getDay());
-  ts += " ";
-  ts += print2digits(rtc.getHours());
-  ts += ":";
-  ts += print2digits(rtc.getMinutes());
-
-  //StaticJsonDocument<capacity> doc;
-  //size_t capacity = JSON_OBJECT_SIZE(23);
-  size_t capacity = JSON_OBJECT_SIZE(66);
-  DynamicJsonDocument doc(capacity);
-
-  doc["ts"] = ts;
-  doc["msg"] = 0;
-  doc["ap"] = Round(filteredValues.filteredAirPressure);
-  doc["ah"] = Round(filteredValues.filteredAirHumidity);
-  doc["at"] = Round(filteredValues.filteredAirTemp);
-  doc["fs"] = fanStatus;
-  doc["fh"] = Round(filteredValues.filteredFanHumidity);
-  doc["ft"] = Round(filteredValues.filteredFanTemp);
-  doc["sp"] = Round(filteredValues.filteredSP);//serialized(String(filteredValues.filteredSP,1));
-  doc["minT"] = Round(minGrainTemp);
-  doc["maxT"] = Round(maxGrainTemp);
-  doc["avT"] = Round(avgGrainTemp);
-  doc["minM"] = Round(minGrainMoisture);
-  doc["maxM"] = Round(maxGrainMoisture);
-  doc["avM"] = Round(avgGrainMoisture);
-  doc["mode"] = fanMode;
-  doc["bn"] = config.batchNumber;
-  doc["ber"] = Round(config.batchEngineTime);
-  doc["bat"] = Round(config.batchAerateTime);
-  doc["bdt"] = Round(config.batchDryingTime);
-  doc["gn"] = config.grain;
-  doc["timestamp"] = rtc.getEpoch();
-  doc["batchStart"] = config.batchStartTime;
-
-  serializeJson(doc, mqttClient);
-  mqttClient.endMessage();
-  SaveDataRecord(doc);
-  //serializeJsonPretty(doc, Serial);
-  //Serial.println();
-
-  for(int cable = 0; cable < numCables; cable++)
+  if(tempCable)
   {
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-    MQTT_Poll();
-    delay(1000);
-
-    mqttClient.beginMessage("/devices/" + deviceId + "/events/DATA_SUMMARY");
-    DynamicJsonDocument doc(capacity);
-
-    doc["ts"] = ts;
-    doc["msg"] = cable+1;
-
-    JsonArray cableTemp = doc.createNestedArray("ct");
-
-    for(int i = 0; i < cableValues[cable].numSensors; i++)
+    for(int i=0; i<10; i++ )
     {
-      cableTemp.add(Round(cableValues[cable].sensors[i].temperature));
+      MQTT_Poll();
+      delay(1000);
     }
-
-    JsonArray cableMois = doc.createNestedArray("mois");
-
-    for(int i = 0; i < cableValues[cable].numSensors; i++)
-    {
-      cableMois.add(Round(cableValues[cable].sensors[i].moisture));
-    }
-
-    serializeJson(doc, mqttClient);
-    SaveDataRecord(doc);
-    mqttClient.endMessage();
-    serializeJsonPretty(doc, Serial);
-    Serial.println();
   }
-
 
   //serializeJson(doc, mqttClient);
-  //mqttClient.endMessage();
+  serializeJson(doc, mqttClient);
+  mqttClient.endMessage();
+
   //serializeJsonPretty(doc, Serial);
   //Serial.println();
-  //Serial.println("Published Message.");
 }
 
 void publishEngineState() {
@@ -628,7 +523,7 @@ void onMessageReceived(int messageSize) {
   Serial.println(command);
 
   if(strcmp(command, "001") == 0)           //Received Request for data message
-    publishDataMessage();
+    ProcessDataRecord();
   else if(strcmp(command, "002") == 0)    //Request for live data
   {
     updateLiveData();

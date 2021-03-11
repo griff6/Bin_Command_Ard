@@ -176,8 +176,8 @@ void SaveDataRecord(DynamicJsonDocument doc)
     Serial.println(dataFile);
   }
 
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
+  //serializeJsonPretty(doc, Serial);
+  //Serial.println();
 
   file.println();
 
@@ -187,20 +187,42 @@ void SaveDataRecord(DynamicJsonDocument doc)
 //  GetDataRecord(1613772391);
 }
 
-void GetDataRecord(unsigned long input)
+String GetDataRecord(String input)
 {
+  String retString;
   const size_t capacity = JSON_OBJECT_SIZE(1024);
-  time_t time = input;
+  //time_t time = input.toInt();
   String dateString = "";
-  dateString += year(time);
-  if(month(time) < 10)
-    dateString += "0";
-  dateString += month(time);
-  if(day(time) < 10)
-    dateString += "0";
-  dateString += day(time);
+  //dateString += year(time);
+//  if(month(time) < 10)
+//    dateString += "0";
+//  dateString += month(time);
+//  if(day(time) < 10)
+//    dateString += "0";
+//  dateString += day(time);
 
   dateString += ".txt";
+
+  String year = input.substring(0, input.indexOf('-'));
+  dateString = year;
+  input.remove(0, input.indexOf('-')+1);
+  String month = input.substring(0, input.indexOf('-'));
+  dateString += month;
+  input.remove(0, input.indexOf('-')+1);
+  String day = input.substring(0, input.indexOf(' '));
+  dateString += day;
+  input.remove(0, input.indexOf(' ')+1);
+  String hour = input.substring(0, 2);
+  //dateString += hour;
+  //input = input.remove(0, input.indexOf('-')+1);
+
+  //id = inputString.substring(0, inputString.indexOf(','));
+  //inputString.remove(0, inputString.indexOf(',')+1);
+
+  //String dateString = input.substring(0, input.indexOf('-'));
+  dateString += ".txt";
+
+
 
   Serial.print("Opening Data File: ");
   Serial.println(dateString);
@@ -218,18 +240,30 @@ void GetDataRecord(unsigned long input)
   String line;
   while(file.available()){
     line = file.readStringUntil('}');
-    Serial.println(line);
+    line += "}";
+  //  Serial.println(line);
     StaticJsonDocument<capacity> doc;
 
     DeserializationError error = deserializeJson(doc, file);
     if(error)
       Serial.print("Failed to deserialize data from data file");
 
-    //Get whatever data is required
-    Serial.print("TimeStamp: ");
-    String ts = doc["ts"];
-    Serial.println(ts);
-  }
+/*
+    unsigned long time = doc["TimeStamp"];
+    if((input > (time-600000)) || (input < (time+60000)))   //check if the timestamp is within 10 minutes of the time we are searching for
+    {
+      retString += line;
+    }
+    */
 
+    //Get whatever data is required
+  //  Serial.print("TimeStamp: ");
+  //  String ts = doc["ts"];
+  //  Serial.println(ts);
+  }
   file.close();
+
+  Serial.print("retString: ");
+  Serial.println(retString);
+  return retString;
 }

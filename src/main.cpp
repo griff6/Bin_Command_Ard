@@ -121,28 +121,9 @@ void loop() {
     prevRPMCalc = currentMillis;
   }
 
-  //This is for debugging to get initial data for testing.
-  /*if(timeIsSet &&  firstLoop == true)
-  {
-    GetBinCableValues();
-
-    GetBatteryVoltage();
-
-    Save_RPM();
-
-    GetPressure();
-    PrintBME280Data();
-    GetFanData();
-    //GetGSMLocation();
-    Serial.print(".");
-
-    firstLoop = false;
-  }
-  */
-
   if(hourlyData){
     //HandleHourlyData();
-    publishDataMessage();
+    ProcessDataRecord();
     SetRTC_Alarm();
     hourlyData = false;
   }

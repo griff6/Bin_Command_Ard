@@ -10,3 +10,4 @@ void InitiallizeBluetooth();
 void CheckBluetooth();
 void PublishBluetoothDataMessage();
 void SendMessage(String);
+void SendDataRecord(String);

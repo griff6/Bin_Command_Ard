@@ -6,4 +6,4 @@ void InitiallizeSD();
 void GetConfigFile();
 void SaveConfigFile();
 void SaveDataRecord(DynamicJsonDocument doc);
-void GetDataRecord(unsigned long input);
+String GetDataRecord(String input);

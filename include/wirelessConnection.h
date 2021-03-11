@@ -13,7 +13,7 @@ String calculateClientId();
 String calculateJWT();
 void MQTT_Poll();
 void CheckConnection();
-void publishDataMessage();
+void publishDataMessage(DynamicJsonDocument doc, bool);
 float Round(float var);
 void publishEngineState();
 void updateLiveData();

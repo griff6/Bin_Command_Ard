@@ -39,11 +39,22 @@ void CheckBluetooth(){
   }
 
   int availableBytes = Serial1.available();
-  for(int i=0; i<availableBytes && i < 100; i++){
+
+if(availableBytes <= 0)
+  return;
+
+for(int i=0; i<availableBytes && i < 100; i++){
     in[i] = Serial1.read();
   }
 
   inputString = in;
+
+  if(!(inputString.indexOf(',') > 0))
+  {
+    //corrupted string, request it again.
+    Serial1.write("?,");
+    delay(10);
+  }
 
   if(availableBytes > 0 && inputString != "H,"){
     Serial.print("Bluetooth Command Received: ");
@@ -76,6 +87,9 @@ while(inputString.indexOf(',') > 0){
     inputString.toCharArray(config.binName, 20);
     SaveConfigFile();
     PublishBluetoothDataMessage();
+  }else if(id == "R")
+  {
+    SendDataRecord(inputString);
   }
 }
 
@@ -276,6 +290,28 @@ void SendMessage(String msg)
   char value[25];
   msg.toCharArray(value, 100);
   Serial1.write(value);
-  Serial.println(value);
+  //Serial.println(value);
   delay(delayAfterMsg);
+}
+
+void SendDataRecord(String input)
+{
+  String record;
+/*
+  char val[input.length()];
+  input.toCharArray(val, input.length()+1);
+
+  time_t time = input.toInt();
+  Serial.print("input: ");
+  Serial.print(input);
+  Serial.print("    val: ");
+  Serial.print(val);
+  Serial.print("    time: ");
+  Serial.println(time);
+  */
+
+  Serial.print("Time Input: ");
+  Serial.println(input);
+
+  record = GetDataRecord(input);    //located in sdOperations
 }

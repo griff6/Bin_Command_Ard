@@ -62,7 +62,8 @@ void StartNewBatch(const char *grainName)
 
   SaveConfigFile();
 
-  publishDataMessage();
+  //publishDataMessage();
+  ProcessDataRecord();
 }
 
 void GetBatteryVoltage()
@@ -204,4 +205,99 @@ float Round(float var)
 {
   float value = (int)(var * 10 + 0.5);
   return (float)value/10;
+}
+
+void ProcessDataRecord()
+{
+  int fanStatus = 0;
+  String cableNum = "C0";
+
+  if(filteredValues.filteredRPM > 100)
+  {
+    fanStatus = 1;
+  }
+
+  Serial.println();
+  Serial.println("Publishing message");
+
+
+  //https://arduinojson.org/v6/assistant/ gives some details on how to calculate the size
+  //https://arduinojson.org/v5/assistant/
+  //https://arduinojson.org/v5/faq/how-to-determine-the-buffer-size/
+  //const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5);
+  //const size_t capacity;// = JSON_OBJECT_SIZE(20);// + JSON_OBJECT_SIZE(16*numCables);
+  //DynamicJsonDocument doc(capacity);
+  //DynamicJsonDocument doc(431);
+  //size_t capacity = JSON_OBJECT_SIZE(78);
+
+  String ts = "";
+  ts = ts + print2digits(rtc.getYear());
+  ts += "-";
+  ts += print2digits(rtc.getMonth());
+  ts += "-";
+  ts += print2digits(rtc.getDay());
+  ts += " ";
+  ts += print2digits(rtc.getHours());
+  ts += ":";
+  ts += print2digits(rtc.getMinutes());
+
+  //StaticJsonDocument<capacity> doc;
+  //size_t capacity = JSON_OBJECT_SIZE(28);
+  size_t capacity = JSON_OBJECT_SIZE(67);
+  DynamicJsonDocument doc(capacity);
+
+  doc["ts"] = ts;
+  doc["msg"] = 0;
+  doc["ap"] = Round(filteredValues.filteredAirPressure);
+  doc["ah"] = Round(filteredValues.filteredAirHumidity);
+  doc["at"] = Round(filteredValues.filteredAirTemp);
+  doc["fs"] = fanStatus;
+  doc["fh"] = Round(filteredValues.filteredFanHumidity);
+  doc["ft"] = Round(filteredValues.filteredFanTemp);
+  doc["sp"] = Round(filteredValues.filteredSP);//serialized(String(filteredValues.filteredSP,1));
+  doc["minT"] = Round(minGrainTemp);
+  doc["maxT"] = Round(maxGrainTemp);
+  doc["avT"] = Round(avgGrainTemp);
+  doc["minM"] = Round(minGrainMoisture);
+  doc["maxM"] = Round(maxGrainMoisture);
+  doc["avM"] = Round(avgGrainMoisture);
+  doc["mode"] = fanMode;
+  doc["bn"] = config.batchNumber;
+  doc["ber"] = Round(config.batchEngineTime);
+  doc["bat"] = Round(config.batchAerateTime);
+  doc["bdt"] = Round(config.batchDryingTime);
+  doc["gn"] = config.grain;
+
+  publishDataMessage(doc, false);     //sdOperations
+  doc["timestamp"] = rtc.getEpoch();
+  doc["batchStart"] = config.batchStartTime;
+  SaveDataRecord(doc);                //wirelessConnection
+
+  for(int cable = 0; cable < numCables; cable++)
+  {
+    DynamicJsonDocument doc(capacity);
+
+    doc["ts"] = ts;
+    doc["msg"] = cable+1;
+
+    JsonArray cableTemp = doc.createNestedArray("ct");
+
+    for(int i = 0; i < cableValues[cable].numSensors; i++)
+    {
+      cableTemp.add(Round(cableValues[cable].sensors[i].temperature));
+    }
+
+    JsonArray cableMois = doc.createNestedArray("mois");
+
+    for(int i = 0; i < cableValues[cable].numSensors; i++)
+    {
+      cableMois.add(Round(cableValues[cable].sensors[i].moisture));
+    }
+
+    SaveDataRecord(doc);            //sdOperations
+    publishDataMessage(doc, true);  //wirelessConnection
+
+    Serial.println();
+  }
+
 }
